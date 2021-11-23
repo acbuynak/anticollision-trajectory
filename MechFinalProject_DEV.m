@@ -118,7 +118,7 @@ M_M =sym([R_M,P_M;[0,0,0,1]]);                                              % Co
 % Define the order of the joints
 jnt = [SwivelBase,LowerArm,UpperArm,ArmRoll,WristBend,ToolFlange];          % Set the order of the joints in the robot
 
-%% Perform Forward Kinematics
+% Perform Forward Kinematics
 [robot,q,qd,qdd] = FrwKin(jnt,M_M);
 
 % Redefine some things for direct use later
@@ -337,6 +337,10 @@ Js = sym(zeros(6,njnt));                                                    % In
                                         jnt(ii).qf(2);
                                         jnt(ii).qf(3)];...
                                   [0,0,0,1]];                               % Transformation from the base frame to the output of the joint
+        
+        % Another loop (for/end) needs to be created here to calculate a
+        % series of homogeneous transformations from the base to the
+        % n-number of sensor points we choose to use
         
         
         if ii == 1
