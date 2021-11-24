@@ -1,8 +1,22 @@
 %% Definition
-% Meant to be a demosntration of diferent scripts I have develop and think 
-% might be usefull as we construct the final project. I do not expect 
-% this to have everything nor to use everything here for later but its a
-% rough sketch
+% This program is meant to run using Matlab R2021b and the following% available addons:
+%   Robotic System Toolbox (R) Matlab
+%   Peter Corke's Robotics System Toolbox for Matlab [https://github.com/petercorke/robotics-toolbox-matlab/tree/bd7a9d75176c660f43fc799b24d838f70b02250c]
+%   Peter Corke's Spatial Math [Matlab Addon Interface 2021 version]
+%   Simulink and Simulink ROS package [Matlab Addon Interface]
+%   Simscape and Simulink Animation [Matlab Addon Interface]
+%
+%
+%
+%
+% To the best extent of our abilities most relevant code
+% is included in this master file
+%% Robot URDF Import
+% [READ] this file format needs to be converted to URDF before it can be
+% used, a method for converting XACRO to URDF using a ROS terminal is
+% outlined in https://www.mathworks.com/matlabcentral/answers/422381-how-do-i-import-xacro-files-as-rigid-body-trees-in-robotics-system-toolbox
+% 
+% [GP7,Info] = importrobot("GP7 Suppot Files\urdf\gp7_macro");
 
 %% Initialization
 % Define variables and matrixes needed to solve the porblem
