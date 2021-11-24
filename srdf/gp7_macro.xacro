@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<robot name="yaskawa_gp7" xmlns:xacro="http://www.ros.org/wiki/xacro">
+	<xacro:macro name="yaskawa_gp7_collision" params="prefix">
+		<disable_collisions link1="${prefix}base_link"    link2="${prefix}link_s"  reason="Adjacent" />
+		<disable_collisions link1="${prefix}link_s"       link2="${prefix}link_l"   reason="Adjacent" />
+		<disable_collisions link1="${prefix}link_l"       link2="${prefix}link_u"   reason="Adjacent" />
+		<disable_collisions link1="${prefix}link_u"       link2="${prefix}link_r"   reason="Adjacent" />
+		<disable_collisions link1="${prefix}link_r"       link2="${prefix}link_b"   reason="Adjacent" />
+		<disable_collisions link1="${prefix}link_b"       link2="${prefix}link_t"   reason="Adjacent" />
+	</xacro:macro>
+</robot>
