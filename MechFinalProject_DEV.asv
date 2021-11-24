@@ -249,7 +249,7 @@ Xmin = min(X);Ymin = min(Y);Zmin = min(Z);
 Xmax = max(X);Ymax = max(Y);Zmax = max(Z);
 %%
 P = Obt(X,Y,Z);P = [X;Y;Z;eval(P)];
-P2 = [eval(J1g1(1:end));eval(J2g1(1:end));eval(J3g1(1:end));P(4,1:end)];
+P2 = [J1g1(1:10);J2g1(1:10);J3g1(1:10);P(4,1:10)]
 figure(2)
 scatter3(X,Y,Z,2,P(4,:))
 figure(3)
