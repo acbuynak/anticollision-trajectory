@@ -5,10 +5,9 @@
 %   Peter Corke's Spatial Math [Matlab Addon Interface 2021 version]
 %   Simulink and Simulink ROS package [Matlab Addon Interface]
 %   Simscape and Simulink Animation [Matlab Addon Interface]
-%
-%
-%
-%
+%   
+%   
+%   
 % To the best extent of our abilities most relevant code
 % is included in this master file
 %% Robot URDF Import
@@ -16,8 +15,7 @@
 % used, a method for converting XACRO to URDF using a ROS terminal is
 % outlined in https://www.mathworks.com/matlabcentral/answers/422381-how-do-i-import-xacro-files-as-rigid-body-trees-in-robotics-system-toolbox
 % 
-% [GP7,Info] = importrobot("GP7 Suppot Files\urdf\gp7_macro");
-
+% GP7urdf = urdfparse("GP7 Suppot Files\urdf\gp7.xacro");
 %% Initialization
 % Define variables and matrixes needed to solve the porblem
 clear;clc;
@@ -27,7 +25,6 @@ R_E = sym('RE_', [3,3], 'real');                                            % De
 P_E = sym('PE_', [3,1], 'real');                                            % Desired End Effector Position
 EE = sym([R_E,P_E;[0,0,0,1]]);                                              % Desired End Effector Transformation
 
-syms
 % Ressolution, in radians, of the joint limits for sampling
 res = 0.5;                                                                  % Resolution of the sampling grids
 
@@ -132,15 +129,17 @@ M_M =sym([R_M,P_M;[0,0,0,1]]);                                              % Co
 % Define the order of the joints
 jnt = [SwivelBase,LowerArm,UpperArm,ArmRoll,WristBend,ToolFlange];          % Set the order of the joints in the robot
 
+clear SwivelBase LowerArm UpperArm ArmRoll WristBend ToolFlange
+
 % Perform Forward Kinematics
-[robot,q,qd,qdd] = FrwKin(jnt,M_M);
+[robot,q,qd,qdd] = FrwKin(jnt,M_M)
 
 % Redefine some things for direct use later
-Tbe = simplify(robot.T.be)
-Teb = simplify(robot.T.eb)
+Tbe = simplify(robot.T.be);
+Teb = simplify(robot.T.eb);
 Js = robot.Js;
 Jb = robot.Jb;
-
+%%
 A = simplify((Js)*(transpose(Js)));
 
 
@@ -166,7 +165,7 @@ Ob1(x,y,z) = piecewise(-1 < x & x < 1 &...
 
 Ob2(x,y,z) = piecewise(0 < x & x < 2 &...
                        0 < y & y < 2 &...
-                        0 < z & z < 4,2,0);
+                       0 < z & z < 4,2,0);
 Obt = Floor+Ob1+Ob2;
 
 % View Obstacle potential fileds
@@ -309,8 +308,8 @@ qd = sym('qd', [njnt,1],'real');                                            % Ve
 qdd = sym('qdd', [njnt,1],'real');                                          % Acceleration Variables
 
 % Initialize some data containers depending on 
-robot = struct("Jnts",jnt,"Js",sym(zeros(6,njnt)),"Jb",sym(zeros(6,njnt)),"T",[]);   
-temp = jnt;
+robot = struct("Jnts",[],"Js",sym(zeros(6,njnt)),"Jb",sym(zeros(6,njnt)),"T",[]);   
+temp = struct([]);
 Js = sym(zeros(6,njnt));                                                    % Initialize the Jacobian
 
 % Takes a joint series as a structure containing (I Inputs and gives O
@@ -320,6 +319,7 @@ Js = sym(zeros(6,njnt));                                                    % In
 % 'S',[O],'Vs',[O],'sS',[O],'esS',[O],'Tp',[O],'Tf',[O],'Tcm',[O],'Vb',[O],'Gb',[O]);
 
     for ii = 1:njnt
+%         count = 1;
         if isinf(jnt(ii).h) % Checks if this is a prismatic joint and creates the angular and linear twist of the axis depending on this
              w = sym([0,0,0]');
              v = sym([jnt(ii).s(1); ...
@@ -334,42 +334,49 @@ Js = sym(zeros(6,njnt));                                                    % In
         end
 
         temp(ii).S = [w;v];                                                 % Creates the screw axis in space frame
-        temp(ii).Sv = temp(ii).S*q(1);temp(ii).Vs = temp(ii).S*qd(2);       % Creates the screw axis in space frame with the variable
+        temp(ii).Sv = temp(ii).S*q(ii,1);                                   % Creates the screw axis in space frame with the variable
+        temp(ii).Vs = temp(ii).S*qd(ii,1);                                  % Creates the screw axis in space frame with the variable
         temp(ii).sS = screw2skew(temp(ii).Sv);                              % Represents the screw axis in skew symetric form
         temp(ii).esS = expm(temp(ii).sS);                                   % Takes the matrix exponential of the skew symetric screw axis 
         Tp = simplify(Tp*temp(ii).esS);                                     % Collects the value of the exponential for future use across all joints
         temp(ii).Tp = Tp;                                                   % Stores the previous value for this joint
-        temp(ii).Tf = Tp * [eye(3),[jnt(ii).qb(1);
-                                    jnt(ii).qb(2);
-                                    jnt(ii).qb(3)];...
-                             [0,0,0,1]];                                    % Transformation from the base frame to the base of the joint     
-        temp(ii).Tcm = Tp * [jnt(ii).Rc,[jnt(ii).qc(1);
-                                         jnt(ii).qc(2);
-                                         jnt(ii).qc(3)];...
-                                    [0,0,0,1]];                             % Transformation from the base to the Center of Mass
-        temp(ii).Tf = Tp * [jnt(ii).Rf,[jnt(ii).qf(1);
-                                        jnt(ii).qf(2);
-                                        jnt(ii).qf(3)];...
-                                  [0,0,0,1]];                               % Transformation from the base frame to the output of the joint
+        temp(ii).Tb = (Tp * [eye(3),[jnt(ii).qb(1);
+                                     jnt(ii).qb(2);
+                                     jnt(ii).qb(3)];...
+                             [0,0,0,1]]);                                   % Transformation from the base frame to the base of the joint     
+        temp(ii).Tb
+        temp(ii).Tcm = (Tp * [jnt(ii).Rc,[jnt(ii).qc(1);
+                                          jnt(ii).qc(2);
+                                          jnt(ii).qc(3)];...
+                                    [0,0,0,1]]);                            % Transformation from the base to the Center of Mass
+        temp(ii).Tf = (Tp * [jnt(ii).Rf,[jnt(ii).qf(1);
+                                         jnt(ii).qf(2);
+                                         jnt(ii).qf(3)];...
+                                  [0,0,0,1]]);                              % Transformation from the base frame to the output of the joint
         
         % Another loop (for/end) needs to be created here to calculate a
         % series of homogeneous transformations from the base to the
         % n-number of sensor points we choose to use
-        
-        
+%         [w,l] = size(jnt(ii).rsns);                                         % Get the amount of points in the sensor array
+%         
+%         for jj = 1:w
+%             jnt(ii).rsns(:,jj)
+%         end
+
         if ii == 1
             Js(:,ii) = temp(ii).S;
         else
-            Js(:,ii) = Adjoint(temp(ii-1).Tp)*temp(ii-1).S;
+            Js(:,ii) = Adjoint(temp(ii-1).Tp)*temp(ii).S;
         end
 
     end
-    
+    temp
+    pause
     robot.Jnts = temp;
-    robot.T.be = collect(temp(end).Tp*M);                                   % Transformation from the base frame to the EE frame
-    robot.T.eb = collect(invHT(robot.T.be));                                % Transformation from the EE frame to the base frame
-    robot.Js = collect(Js);                                                 % Store the Space Jacobian
-    robot.Jb = collect(Adjoint(robot.T.eb)*Js);                             % Calculate and store the Body Jacobian
+    robot.T.be = simplify(temp(end).Tp*M);                                  % Transformation from the base frame to the EE frame
+    robot.T.eb = invHT(robot.T.be);                                         % Transformation from the EE frame to the base frame
+    robot.Js = Js;                                                          % Store the Space Jacobian
+    robot.Jb = simplify(Adjoint(robot.T.eb)*Js);                            % Calculate and store the Body Jacobian
     % Calcualte EE twist in space and body frame
     robot.Vs = robot.Js*qd; robot.Vb = robot.Jb*qd;
 end
