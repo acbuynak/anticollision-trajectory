@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Tier1 Launch File -->
+
+
+<launch>
+
+    <!-- Launch Arguments -->
+    <arg name="robot_ip" />
+    <arg name="controller" value="yrc1000" />
+
+
+    <!-- Joint names -->
+    <rosparam command="load" file="$(find motoman_gp7_support)/config/joint_names_gp7.yaml"/>
+
+
+    <!-- Connect to robot -->
+    <include file="$(find motoman_gp7_support)/launch/robot_interface_streaming_gp7.launch" >
+        <arg name="robot_ip" value="$(arg robot_ip)"/>
+        <arg name="controller" value="$(arg controller)"/>
+    </include>
+
+
+    <!-- Publish tf2 transforms -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+</launch>
