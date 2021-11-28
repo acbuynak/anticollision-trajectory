@@ -1,0 +1,11 @@
+<launch>
+
+    <arg name="sim" default="true" />
+
+	<include file="$(find motoman_gp7_moveit_config)/launch/moveit_planning_execution.launch" >
+        <arg name="sim" value="$(arg sim)"/>
+        <arg name="robot_ip" unless="$(arg sim)" default="192.168.1.100" />
+        <arg name="controller" unless="$(arg sim)" value="yrc1000" />
+    </include>
+
+</launch>

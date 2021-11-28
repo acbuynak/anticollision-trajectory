@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>anticollision_trajectory</name>
+  <version>0.1.0</version>
+  <description>
+    <p>
+        "anticollision_trajectory"
+    </p>
+    <p>
+        This package contains launch, control, and configuration files
+        for the ME7752 Fall 2021 Course Project @ Ohio State.
+      </p>
+    <p>
+        Before using any of the configuration files and / or meshes included
+        in this package, be sure to check they are correct for the particular
+        robot model(s) and configuration you intend to use them with.
+      </p>
+  </description>
+
+  <!-- META DATA -->
+  <license>MIT</license>
+  <author email="acbuynak@gmail.com">acbuynak</author>
+  <author email="enriquezgutierrez.1@osu.edu">darkriser192</author>
+  <author email="anichowski.2@osu.edu">guydudeman3</author>
+  <maintainer email="acbuynak@gmail.com">acbuynak</maintainer>
+
+  <!-- DEPENDENCIES -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- PACKAGE IS NOT ARCHITECTURE-SPECIFIC ONCE COMPILED-->
+  <export>
+    <architecture_independent/>
+  </export>
+</package>
