@@ -1,0 +1,9 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: motoman_gp7_support
+    relative_path: urdf/gp7.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/motoman_gp7.srdf
+  CONFIG:
+    generated_timestamp: 1603074089
