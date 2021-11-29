@@ -229,7 +229,6 @@ fimplicit3(Obt,LIMS,"MeshDensity",10);
 axis(LIMS)
 xlabel('X');ylabel('Y');zlabel('Z');
 title('Obstacle Potential Field')
-grid on
 hold on
 
 % Do frws kinematics
@@ -242,10 +241,10 @@ Xspace = nan(1,numel(jspace));Yspace = Xspace;Zspace = Xspace;
 P = Xspace;
 figure(4)
 scatter3(Xspace(1),Yspace(1),Zspace(1),'.b');grid on
-j1 = subs(robot.Jnts(1).lmts,'pi',pi);j2 = subs(robot.Jnts(2).lmts,'pi',pi);
-j3 = subs(robot.Jnts(3).lmts,'pi',pi);j4 = subs(robot.Jnts(4).lmts,'pi',pi);
-j5 = subs(robot.Jnts(5).lmts,'pi',pi);j6 = subs(robot.Jnts(6).lmts,'pi',pi);
-
+j1 = robot.Jnts(1).lmts;j2 = robot.Jnts(2).lmts;
+j3 = robot.Jnts(3).lmts;j4 = robot.Jnts(4).lmts;
+j5 = robot.Jnts(5).lmts;j6 = robot.Jnts(6).lmts;
+pause
 count = 0;
 
 for ii = 1:n1
@@ -255,8 +254,9 @@ for ii = 1:n1
                 for mm = 1:n5
                     count = count + 1;
                     XYZ = (Tf(j1(ii),j2(jj),j3(kk),j4(ll),j5(mm),0))./1000;
-                    XYZ = subs(XYZ,'pi',pi);
-                    Xspace(count) = XYZ(1);Yspace(count) = XYZ(2);Zspace(count) = XYZ(3);
+                    Xspace(count) = XYZ(1);
+                    Yspace(count) = XYZ(2);
+                    Zspace(count) = XYZ(3);
                     P(count) = Obt(XYZ(1),XYZ(2),XYZ(3));
                 end
             end
