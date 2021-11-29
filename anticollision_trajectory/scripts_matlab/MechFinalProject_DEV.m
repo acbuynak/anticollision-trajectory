@@ -202,7 +202,7 @@ disp('Done Section 1')
 % dA = det(A);
 
 
-%% Inverse Kinematics of Desired Robot
+% Inverse Kinematics of Desired Robot
 % Really meant to be defined bellow in the "Included Functions" section but
 % called out here due to importance
 
@@ -254,10 +254,16 @@ for ii = 1:n1
             for ll = 1:n4
                 for mm = 1:n5
                     count = count + 1;
-                    XYZ = (Tf(j1(ii),j2(jj),j3(kk),j4(ll),j5(mm),0))./1000;
-                    XYZ = subs(XYZ,'pi',pi);
-                    Xspace(count) = XYZ(1);Yspace(count) = XYZ(2);Zspace(count) = XYZ(3);
+                    XYZ = (Tf(j1(ii),j2(jj),j3(kk),j4(ll),j5(mm),0))
+                    XYZ = XYZ./1000
+                    %XYZ = subs(XYZ,'pi',pi)
+                    
+                    Xspace(count) = XYZ(1);
+                    Yspace(count) = XYZ(2);
+                    Zspace(count) = XYZ(3);
                     P(count) = Obt(XYZ(1),XYZ(2),XYZ(3));
+                    
+
                 end
             end
             figure(4)
