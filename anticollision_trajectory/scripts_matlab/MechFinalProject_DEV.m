@@ -26,7 +26,7 @@ P_E = sym('PE_', [3,1], 'real');                                            % De
 EE = sym([R_E,P_E;[0,0,0,1]]);                                              % Desired End Effector Transformation
 
 % Ressolution, in radians, of the joint limits for sampling
-resj = 15;                                                                  % Resolution of the sampling grids in joint space in degrees
+resj = 10;                                                                  % Resolution of the sampling grids in joint space in degrees
 resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
 rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
 
@@ -209,13 +209,13 @@ LIMS = [-3, 3, -3,3,-2,5];
 
 Floor(x,y,z) =  piecewise(z < 0,1,0);
 
-Ob1(x,y,z) = piecewise(-.5 < x & x < .5 &...
-                       -.5 < y & y < .5 &...
+Ob1(x,y,z) = piecewise(  0 < x & x < 1 &...
+                         0 < y & y < 1 &...
                          0 < z & z < 1,1,0);
 
-Ob2(x,y,z) = piecewise(1 < x & x < 1.5 &...
-                       1 < y & y < 1.5 &...
-                       1.5 < z & z < 4,1,0);
+Ob2(x,y,z) = piecewise(0 < x & x < 2 &...
+                      -1 < y & y < 1 &...
+                       0 < z & z < 2,1,0);
 Obt = Floor+Ob1+Ob2;
 
 %% View Obstacle potential fileds
@@ -255,12 +255,10 @@ scatter3(X,Y,Z,2,P(4,:))
 figure(3)
 bubblechart3(X,Y,Z,P(4,:))
 bubblesize([min(P(4,:))+1,max(P(4,:))+2]*3)
+
 %C = eval(Tbef(J1g1(1),J2g1(1),J3g1(1),0,0,0));Cc = [C(1:3,4)./1000;1]
 %P()Obt(Cc(1),Cc(2),Cc(3))
-
-
 % jntgrid(q1,q2,q3) -> FrwKin -> Obt(x,y,z) = 1 or 0 > Pobsjnts(q1,q2,q3)
-
 % Total Potential Field
 % The sum of all potential fields
 % P = Pfield(q1,q2,q3) = Pobsjnts + Pmanipulability
