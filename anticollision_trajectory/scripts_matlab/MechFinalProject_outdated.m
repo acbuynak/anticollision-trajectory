@@ -200,7 +200,7 @@ grid on
 clc
 disp('Done Section 1')
 
-%% Symbolicaly this next operation takes a big computational toll, it is
+% Symbolicaly this next operation takes a big computational toll, it is
 % usefull since the total potential field benefits from the manipulability
 % cost, It is included here for completeness but i dont recomend doing it
 % dA = det(A);
@@ -231,37 +231,42 @@ title('Obstacle Potential Field')
 grid on
 hold on
 
-% Do Forward Kinematics and get weights
-n1 = numel(robot.Jnts(1).lmts);n2 = numel(robot.Jnts(2).lmts);
-n3 = numel(robot.Jnts(3).lmts);n4 = numel(robot.Jnts(4).lmts);
-n5 = numel(robot.Jnts(5).lmts);n6 = numel(robot.Jnts(6).lmts);
+%% Do Forward Kinematics and get weights
+n1 = numel(robot.Jnts(1).lmts);
+n2 = numel(robot.Jnts(2).lmts);
+n3 = numel(robot.Jnts(3).lmts);
+n4 = numel(robot.Jnts(4).lmts);
+n5 = numel(robot.Jnts(5).lmts);
+n6 = numel(robot.Jnts(6).lmts);
 
 jspace = nan(n1,n2,n3);
 nj = numel(jspace);
 
-j1 = subs(robot.Jnts(1).lmts,'pi',pi);j2 = subs(robot.Jnts(2).lmts,'pi',pi);
-j3 = subs(robot.Jnts(3).lmts,'pi',pi);j4 = subs(robot.Jnts(4).lmts,'pi',pi);
-j5 = subs(robot.Jnts(5).lmts,'pi',pi);j6 = subs(robot.Jnts(6).lmts,'pi',pi);
+j1 = subs(robot.Jnts(1).lmts,'pi',pi); 
+j2 = subs(robot.Jnts(2).lmts,'pi',pi);
+j3 = subs(robot.Jnts(3).lmts,'pi',pi); 
+j4 = subs(robot.Jnts(4).lmts,'pi',pi);
+j5 = subs(robot.Jnts(5).lmts,'pi',pi); 
+j6 = subs(robot.Jnts(6).lmts,'pi',pi);
 
 [j1g,j2g,j3g] = ndgrid(j1,j2,j3);
 
 disp([n1,n2,n3,n4,n5,n6,nj]);
 
-% This step takes a bit to process but its actually really good all things
-% considered, only for 4 joints
+% This step takes a bit to process but its actually really good all things considered, only for 4 joints
 % [j1g,j2g,j3g,j5g] = ndgrid(j1,j2,j3,j5);
 % jspace = nan(n1,n2,n3,n5);
-% Xgoal = 0; Ygoal = 0; Zgoal = 0;
-% Pt = nan(n1,n2,n3,n5);
+% C = cell(n1,n2,n3,n5);
+% P = nan(n1,n2,n3,n5);
 % parfor ii = 1:n1
 %     for jj = 1:n2
 %         for kk = 1:n3
 %             for ll = 1:n5
-%                 C = Tf(j1(ii),j2(jj),j3(kk),0,j5(ll),0);
+%                 C{ii,jj,kk,ll} = Tf(j1(ii),j2(jj),j3(kk),0,j5(ll),0);
 %                 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);
 %                 Pd = (Xgoal - C{1,1}./1000).^2  +  (Ygoal - C{2,1}./1000).^2  +...  
 %                      (Zgoal - C{3,1}./1000).^2 ;
-%                 Pt(ii,jj,kk,ll) = double(Po + Pd)
+%                 P(ii,jj,kk,ll) = double(Po + Pd)
 %             end
 %         end
 %     end
@@ -273,15 +278,11 @@ C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);                           % is the point at an obstacle or not
 Pd = (Xgoal - C{1,1}./1000).^2  +  (Ygoal - C{2,1}./1000).^2  +...          % Weight of the distance to the goal configuration
      (Zgoal - C{3,1}./1000).^2 ;
-
-Pt = Po + Pd;Pt = double(Pt);
-[Pj1,Pj2,Pj3] = gradient(Pt);
+P = Po + Pd;
+P = double(P);
 
 figure(3)
-scatter3(C{1,1}(:),C{2,1}(:),C{3,1}(:),2,Pt(:))
-figure(4)
-scatter3(j1g(:),j2g(:),j3g(:),2,P(:))
-
+scatter3(C{1,1}(:),C{2,1}(:),C{3,1}(:),2,P(:))
 % This next figure looses meaning when seen in higher than 3 dimensions, if
 % I keep j5 in the mix its better to suppress this output
 % figure(4)
@@ -296,14 +297,11 @@ clc;count = 0;
 % Examples: https://stackoverflow.com/questions/30465259/create-an-adjacency-matrix-matlab
 % https://stackoverflow.com/questions/3277541/construct-adjacency-matrix-in-matlab
 %
+%
+%
 
-sz = [n1,n2,n3];
-[ii, jj] = adjmatrix(sz, 2, inf, 1);
-A = sparse(ii, jj, ones(1,numel(ii)), nj, nj);
-Weight(:) = (Pt(ii)+Pt(jj));
-G = digraph(A);
-G.Edges.Weight = Weight';
-% plot(G)
+A = zeros(nj); 
+
 
 %% Trajectory Generation - Motion between Waypoints - In jnt coordinates
 % A function of some polynomial trajectory scheme and a search algorithm
@@ -314,51 +312,44 @@ G.Edges.Weight = Weight';
 % their motion. Generate trajectory over segment A,B,C....
 % Deine waypoints as [4x4] HTs in cartesian space, define maximum joint
 % velocities and acceleration for each joint or for all joints
-clc;
-path_gen = struct('Segment',[],'Jnt',[],'tvct',[]); 
-sgmnt_gen = struct('Start',[],'End',[],'Vwmax',[],'Awmax',[],'t0',0,...
-    'tf',[]);
+path_gen = struct('Segment',[],'Jnt',[],'tvct',[]); sgmnt_gen = struct('Start',[],'End',[],'Vwmax',[],'Awmax',[],'t0',0,...
+    'tf',0.5);
 % Initialize # of paths and segments
-path = path_gen;segment1 = sgmnt_gen;segment2 = sgmnt_gen;
+path = path_gen;segment1 = sgmnt_gen;
 
 % Pick a joint configuration just to test - this ideally comes from the
 % waypoints
 
-QtstA = sym([   0 ,  0 ,   0 ,  0 ,  0 ,   0 ]);
-QtstB = sym([ pi/2,pi/2, pi/2,pi/2,pi/2, pi/2]);
-QtstC = sym([-pi/2, pi ,-pi/2,pi/2,pi  ,-pi/2]);
+QtstA = sym([0,0,0,-2]);
+QtstB = sym([pi,-pi/2,2*pi/3,2]);
 
 % update the segment #
-Ap = Tbef(QtstA(1),QtstA(2),QtstA(3),QtstA(4),QtstA(5),QtstA(6));
-Vwmax1 = 1  ;Awmax1 = 0.5;
-Bp = Tbef(QtstB(1),QtstB(2),QtstB(3),QtstB(4),QtstB(5),QtstB(6));
-Vwmax2 = 0.5;Awmax2 = 1;
-Cp = Tbef(QtstC(1),QtstC(2),QtstC(3),QtstC(4),QtstC(5),QtstC(6));
+Ap = forwardKinScara(QtstA(1),QtstA(2),QtstA(3),QtstA(4));
+Bp = forwardKinScara(QtstB(1),QtstB(2),QtstB(3),QtstB(4));
+Vwmax = sym('1');Awmax = sym('0.5');
 
-segment1.Start = QtstA';
-segment1.End = QtstB';
-segment1.Vwmax= Vwmax1;
-segment1.Awmax= Awmax1;
-
-segment2.Start = QtstB';
-segment2.End = QtstC';
-segment2.Vwmax= Vwmax2;
-segment2.Awmax= Awmax2;
+segment1.Start = Ap;
+segment1.End = Bp;
+segment1.Vwmax= Vwmax;
+segment1.Awmax= Awmax;
 
 % A path is a sequence of segments
 
-PathObj.Segment = [segment1,segment2,[],[]];
+pathobj.Segment = [segment1,[],[],[]];
 
-% Create the trajectory, mified from original code to not need frdw/inv
-% kinematics
-
+% Create a timescale vector
 hrz = rest; 
 
-[TrjObj,TT] = jnttrjgn(PathObj,hrz);
-TT.Properties.VariableUnits = {'rads','rads/sec','rads/(sec^2)'};
-writetimetable(TT,'Trajectory.csv','Delimiter','bar');
+TrjObj = jnttrjgn(PathObj,hrz,IKIN,FKIN);
+
 
 %% Included Functions
+function s = LSPB(W,tf,N)
+% given the number of samples generates timescaling vectors s sd and sdd
+    [s,sd,sdd,T] = trapveltraj(W,N,'EndTime',tf);
+    s = struct('s',s,'sd',sd,'sdd',sdd,'T',T);
+end
+
 
 function AdT = Adjoint(T)
 % from lynch
@@ -396,7 +387,7 @@ function skew = screw2skew(screw)
     skew = [vect2skew(screw(1:3)),screw(4:6);0,0,0,0];
 end
 
-% Inverse Homogeneous Transform
+
 function iHT = invHT(HT)
 % takes a homogeneous transformation T and calculates its inverse using
 % properties of T and not inv(T)
@@ -408,7 +399,7 @@ function iHT = invHT(HT)
 
 end
 
-% Forward Kineamtics
+
 function [robot,q,qd,qdd] = FrwKin(jnt,M)
 % Takes the key components of a robot, its joints and null frame, and
 % creates said robot while also expanding the joint information to include
@@ -500,125 +491,170 @@ Js = sym(zeros(6,njnt));                                                    % In
     robot.Vs = robot.Js*qd; robot.Vb = robot.Jb*qd;
 end
 
-% Trajectory Generation
-function [PathObj,TT] = jnttrjgn(PathObj,hrz)
-% path_gen = struct('Segment',[],'Jnt',[],'tvct',[]); 
-% sgmnt_gen = struct('Start',[],'End',[],'Vwmax',[],'Awmax',[],'t0',[],...
-%                    'tf',[]);  
-n = length(PathObj.Segment);
-njnt = size([PathObj.Segment(1).Start],1);
 
+% function [Q,Qs] = InvKin(HT,FrwKin)
+% This needs to be defined given the choosen robot architecture
+%
+%
+%
+%
+%
+% end
+
+
+% Inertia code is glitchy and would porbably benefit from a second pair of eyes but i dont expect to need it
+% function [robot] = inertia(robot,g)
+% % Given the robot output of the above functions, it will generate the total
+% % Kinetic Energy, total potential energy, and update the robot to give the
+% % mass matrix
+%     n = length(robot.jnts);
+%     [w,l] = size(robot.Jb);
+%     for ii = 1:n
+%              Jp = sym(zeros(w,l));
+%         Jp(:,1:ii) = sym(robot.Jb(:,1:ii));
+%         robot.jnts(ii).mI = sym(robot.jnts(ii).m*eye(3));
+%         Ib = sym(([robot.jnts(ii).I(1),0,0;
+%                 0,robot.jnts(ii).I(2),0;
+%                 0,0,robot.jnts(ii).I(3)]));
+%         Iq =  Ib + (robot.jnts(ii).m*(...
+%                ((robot.jnts(ii).rcom')*(robot.jnts(ii).rcom)*eye(3)) - ...
+%                ((robot.jnts(ii).rcom)*(robot.jnts(ii).rcom'))...
+%                     ));
+%         robot.jnts(ii).Iq = sym(Iq);
+%         Tcm = invHT(robot.jnts(ii).Tcm);
+%         robot.jnts(ii).M = simplify(((Jp(4:6,:)')*(robot.jnts(ii).mI)*(Jp(4:6,:))) + ...
+%                            ((Jp(1:3,:)')*(Tcm(1:3,1:3))*(robot.jnts(ii).mI)*(Tcm(1:3,1:3)')*(Jp(1:3,:))));
+%         
+%         robot.jnts(ii).Up = (robot.jnts(ii).m)*(g')*(robot.jnts(ii).Tcm(1:3,4));
+%     end
+%     robot.M  = sym(zeros(n));
+%     robot.Up = sym(0);
+%     for ii = 1:n
+%         robot.M = robot.M + robot.jnts(ii).M;
+%         robot.Up = robot.Up + robot.jnts(ii).Up;
+%     end
+%     robot.M = collect(robot.M);
+%     robot.C = sym(zeros(size(robot.M)));
+%     for kk = 1:length(robot.M)
+%         for jj = 1:length(robot.M)
+%             for ii = 1:length(robot.M)
+% 
+%                 Crtl(ii,jj,kk) = (1/2)*(...
+%                     diff( robot.M(kk,jj) , robot.q(ii))  +   ...
+%                          diff( robot.M(kk,ii) , robot.q(jj))   -   ...
+%                                diff( robot.M(ii,jj) , robot.q(kk)));
+%                                 
+%                 robot.C(kk,jj) = robot.C(kk,jj) + Crtl(ii,jj,kk)*robot.qd(ii);
+%                 
+%             end
+%         end
+%     end
+% 
+%     robot.C = expand(robot.C);
+%     robot.G(n,1) = 0;
+% 
+%     for ii = 1:n
+%         robot.G(ii,1) = diff(robot.Up,robot.q(ii));
+%     end
+%     tau(1:n,1) = sym(0);
+%     for ii = 1:n
+%         disp('trq fun.')
+%         m = 0; c = 0;
+%         for jj = 1:n
+%             disp('trq fun..')
+%             for kk = 1:n
+%                 disp('trq fun...')
+%                 m = m + robot.M(ii,jj)*robot.qdd(jj);
+%                 c = c + Crtl(ii,jj,kk)*robot.qdd(jj)*robot.qdd(kk);
+%                 u = diff(robot.Up,robot.q(ii));
+% 
+%                 tau(ii,1) = m + c + u;
+% 
+%             end
+%         end
+%     end
+% robot.tau = tau;
+% 
+% M = robot.M ; C = robot.C; G = robot.G;
+% Torqe = matlabFunction(((M*robot.qdd) + ((robot.qd')*C*robot.qd) + G),'Vars', [robot.q, robot.qd, robot.qdd]);
+% robot.Torque = Torqe;
+% end
+% 
+
+
+function PathObj = jnttrjgn(PathObj,hrz,IKIN,FKIN)
+
+% takes a Path object, time scaling vectors, and an inverse kinematics
+% solver as inputs and generates a jointspace trajectory represented a
+% vector of position, speed, and acceleration for LSPB.jntnum is the number
+% of joints
+% sgmnt_gen = struct('Start',[],'End',[],'Vwmax',[],'Awmax',[]);
+    
+t0 = 0; 
+n = length(PathObj);
     for ii = 1:n
-
-        Start(:,1) = PathObj.Segment(ii).Start;
-        End(:,1) = PathObj.Segment(ii).End;
-        Vmax = PathObj.Segment(ii).Vwmax;
-        Amax = PathObj.Segment(ii).Awmax;
-        ta = Vmax/Amax; tf = 2*ta;
-
-        PathObj.Jnt.jnt(njnt,hrz*tf) = Inf;
-        PathObj.Jnt.jntd(njnt,hrz*tf) = Inf;
-        PathObj.Jnt.jntdd(njnt,hrz*tf) = Inf;
-        
-        s.s = PathObj.Jnt.jnt;
-        s.sd = PathObj.Jnt.jntd;
-        s.sdd = PathObj.Jnt.jntdd;
-
-        s.T = [];
-
+        disp(['searching trj.'])
+        [QStr,QsStr] = IKIN(PathObj.Segment(ii).Start,[0,0,0,0]);
+        [QEnd,QsEnd] = IKIN(PathObj.Segment(ii).End,QsStr');
+        Vmax = PathObj.Segment(ii).Vwmax;Amax = PathObj.Segment(ii).Awmax;
+        ta = Vmax/Amax; tf = t0+(2*ta);
+        PathObj.Jnt(ii).jnt(:,1:hrz*tf) = Inf;
+        PathObj.Jnt(ii).jntd(:,1:hrz*tf) = Inf;
+        PathObj.Jnt(ii).jntdd(:,1:hrz*tf) = Inf;
+        tf = 0;
+        s.s = Inf;s.sd = Inf; s.sdd = Inf;s.T = [];
         while max(max(abs(s.sd))) > Vmax || max(max(abs(s.sdd))) > Amax
-            %disp(['searching trj.'])
-            N = size(s.s,2);
-            s = LSPB(double([Start,End]),tf,N);
-            
-            if max(max(abs(s.sd))) > Vmax || max(max(abs(s.sdd))) > Amax
-                tf = tf + 0.1;
+            disp(['searching trj.'])
+            tf = tf + 0.25;
+            N = ceil(tf*hrz);
+            s = LSPB(eval([QsStr,QsEnd]),tf,N);
+            % Show Pretty Lines
+            for Fuselage = 1
+                figure(98)
+                subplot(2,2,1)
+                plot(s.T,s.s(1,:),'r-');
+                grid on; hold on; 
+                plot(s.T,s.sd(1,:),'g-'); 
+                plot(s.T,s.sdd(1,:),'b-');
+                legend('Q','Qd','Qdd')
+                title('Joint1')
+                hold off
+                subplot(2,2,2)
+                plot(s.T,s.s(2,:),'r-');
+                grid on; hold on; 
+                plot(s.T,s.sd(2,:),'g-'); 
+                plot(s.T,s.sdd(2,:),'b-');
+                legend('Q','Qd','Qdd')
+                title('Joint2')
+                hold off
+                subplot(2,2,3)
+                plot(s.T,s.s(3,:),'r-');
+                grid on; hold on; 
+                plot(s.T,s.sd(3,:),'g-'); 
+                plot(s.T,s.sdd(3,:),'b-');
+                legend('Q','Qd','Qdd')
+                title('Joint3')
+                hold off
+                subplot(2,2,4)
+                plot(s.T,s.s(4,:),'r-');
+                grid on; hold on; 
+                plot(s.T,s.sd(4,:),'g-'); 
+                plot(s.T,s.sdd(4,:),'b-');
+                legend('Q','Qd','Qdd')
+                title('Joint4')
+                hold off
+                pause(0.0001)
             end
 
-        figure(80+ii)
-        subplot(3,1,1)
-        plot(s.T,s.s(1,:),'r*',s.T,s.s(2,:),'b*',s.T,s.s(3,:),'g*',s.T,s.s(4,:),'r-',s.T,s.s(5,:),'b-',s.T,s.s(6,:),'g-')
-        legend('q1','q2','q3','q4','q5','q6')
-        grid on
-        subplot(3,1,2)
-        plot(s.T,s.sd(1,:),'r*',s.T,s.sd(2,:),'b*',s.T,s.sd(3,:),'g*',s.T,s.sd(4,:),'r-',s.T,s.sd(5,:),'b-',s.T,s.sd(6,:),'g-')
-        legend('q1','q2','q3','q4','q5','q6')
-        grid on
-        subplot(3,1,3)
-        plot(s.T,s.sdd(1,:),'r*',s.T,s.sdd(2,:),'b*',s.T,s.sdd(3,:),'g*',s.T,s.sdd(4,:),'r-',s.T,s.sdd(5,:),'b-',s.T,s.sdd(6,:),'g-')
-        legend('q1','q2','q3','q4','q5','q6')
-        grid on
-        pause(0.1);
-        
+        disp(['searching trj..'])
         end
-
-        PathObj.Segment(ii).jnt = s.s;
-        PathObj.Segment(ii).jntd = s.sd;
-        PathObj.Segment(ii).jntdd = s.sdd;
-        PathObj.Segment(ii).tvct = s.T;
-
-        if ii == 1
-            PathObj.Jnt.jnt = s.s;
-            PathObj.Jnt.jntd = s.sd;
-            PathObj.Jnt.jntdd = s.sdd;
-            PathObj.tvct = s.T;
-        else
-            PathObj.Jnt.jnt = [[PathObj.Jnt.jnt],[s.s]];
-            PathObj.Jnt.jntd = [PathObj.Jnt.jntd,s.sd];
-            PathObj.Jnt.jntdd = [PathObj.Jnt.jntdd,s.sdd];
-            PathObj.tvct = [PathObj.tvct,s.T(1:end)+PathObj.tvct(end)];
-        end
-
-        figure(80+njnt)
-        subplot(3,1,1)
-        plot(PathObj.tvct,PathObj.Jnt.jnt(1,:),'r-',...
-             PathObj.tvct,PathObj.Jnt.jnt(2,:),'b-',...
-             PathObj.tvct,PathObj.Jnt.jnt(3,:),'g-',...
-             PathObj.tvct,PathObj.Jnt.jnt(4,:),'y-',...
-             PathObj.tvct,PathObj.Jnt.jnt(5,:),'p-',...
-             PathObj.tvct,PathObj.Jnt.jnt(6,:),'o-')
-        legend('q1','q2','q3','q4','q5','q6')
-        ylabel('Position Radians')
-        xlabel('Time seconds')
-        grid on
-        subplot(3,1,2)
-        plot( PathObj.tvct,PathObj.Jnt.jntd(1,:),'r-',...
-              PathObj.tvct,PathObj.Jnt.jntd(2,:),'b-',...
-              PathObj.tvct,PathObj.Jnt.jntd(3,:),'g-',...
-              PathObj.tvct,PathObj.Jnt.jntd(4,:),'y-',...
-              PathObj.tvct,PathObj.Jnt.jntd(5,:),'p-',...
-              PathObj.tvct,PathObj.Jnt.jntd(6,:),'o-')
-        legend('qd1','qd2','qd3','qd4','qd5','qd6')
-        ylabel('Velocity')
-        xlabel('Time seconds')
-        grid on
-        subplot(3,1,3)
-        plot( PathObj.tvct,PathObj.Jnt.jntdd(1,:),'r-',...
-              PathObj.tvct,PathObj.Jnt.jntdd(2,:),'b-',...
-              PathObj.tvct,PathObj.Jnt.jntdd(3,:),'g-',...
-              PathObj.tvct,PathObj.Jnt.jntdd(4,:),'y-',...
-              PathObj.tvct,PathObj.Jnt.jntdd(5,:),'p-',...
-              PathObj.tvct,PathObj.Jnt.jntdd(6,:),'o-')
-        legend('qdd1','qdd2','qdd3','qdd4','qdd5','qdd6')
-        ylabel('Acceleration')
-        xlabel('Time seconds')
-        grid on
-
+        PathObj.Jnt(ii).jnt = s.s;PathObj.Jnt(ii).jntd = s.sd;PathObj.Jnt(ii).jntdd = s.sdd;
+        PathObj(ii).tvct = s.T;
+        disp(['searching trj...'])
     end
 
-TT = timetable(PathObj.Jnt.jnt',PathObj.Jnt.jntd',PathObj.Jnt.jntdd','SampleRate',hrz);
-TT.Properties.VariableNames = {'Position','Velocity','Acceleration'};
-
 end
 
-% Timescaling
-function s = LSPB(W,tf,N)
-% given the number of samples generates timescaling vectors s sd and sdd
-    [s,sd,sdd,T] = trapveltraj(W,N,'EndTime',tf);
-    s = struct('s',s,'sd',sd,'sdd',sdd,'T',T);
-end
-
-% Read STL
 function [fout, vout, cout] = ftread(filename)
 % Reads CAD STL ASCII files, which most CAD programs can export.
 % Used to create Matlab patches of CAD 3D data.
@@ -666,7 +702,7 @@ function [fout, vout, cout] = ftread(filename)
            vnum = vnum + 1;                % If a V we count the # of V's
            report_num = report_num + 1;    % Report a counter, so long files show status
            if report_num > 249;
-               % disp(sprintf('Reading vertix num: %d.',vnum));
+               disp(sprintf('Reading vertix num: %d.',vnum));
                report_num = 0;
            end
            v(:,vnum) = sscanf(tline, '%*s %f %f %f'); % & if a V, get the XYZ data of it.
@@ -686,109 +722,6 @@ function [fout, vout, cout] = ftread(filename)
     cout = c';
     %
     fclose(fid);
-end
-
-% Make Adjecency Matrix
-function [ii, jj] = adjmatrix(sz, r, p, st)
-    % https://github.com/shaibagon/GCMex/blob/master/sparse_adj_matrix.m
-    % Construct sparse adjacency matrix (provides ii and jj indices into the
-    % matrix)
-    %
-    % Usage:
-    %   [ii jj] = sparse_adj_matrix(sz, r, p, st)
-    %
-    % inputs:
-    %   sz - grid size (determine the number of variables n=prod(sz), and the
-    %        geometry)
-    %   r  - the radius around each point for which edges are formed
-    %   p  - in what p-norm to measure the r-ball, can be 1,2 or 'inf'
-    %   st - integer step size in making the neighborhood: st=1, full neighborhood, 
-    %        for r > st > 1 the neighborhood is uniformly sampled
-    %
-    % outputs
-    %   ii, jj - linear indices into adjacency matrix (for each pair (m,n)
-    %   there is also the pair (n,m))
-    %
-    % How to construct the adjacency matrix?
-    % >> A = sparse(ii, jj, ones(1,numel(ii)), prod(sz), prod(sz));
-    %
-    %
-    % Example:
-    % >> [ii jj] = sparse_adj_matrix([10 20], 1, inf);
-    % construct indices for 200x200 adjacency matrix for 8-connect graph over a
-    % grid of 10x20 nodes.
-    % To visualize the graph:
-    % >> [r c]=ndgrid(1:10,1:20);
-    % >> A = sparse(ii, jj, ones(1,numel(ii)), 200, 200);;
-    % >> gplot(A, [r(:) c(:)]);
-    %
-    %
-    %
-    % Copyright (c) Bagon Shai
-    % Department of Computer Science and Applied Mathmatics
-    % Wiezmann Institute of Science
-    % http://www.wisdom.weizmann.ac.il/
-    % 
-    % Permission is hereby granted, free of charge, to any person obtaining a copy
-    % of this software and associated documentation files (the "Software"), to deal
-    % in the Software without restriction, subject to the following conditions:
-    % 
-    % The above copyright notice and this permission notice shall be included in 
-    % all copies or substantial portions of the Software.
-    %
-    % The Software is provided "as is", without warranty of any kind.
-    %
-    % Sep. 2010
-    %
-    
-    if nargin < 4
-        st = 1;
-    end
-    
-    % number of variables
-    n = prod(sz);
-    % number of dimensions
-    ndim = numel(sz);
-    
-    tovec = @(x) x(:);
-    N=cell(ndim,1);
-    I=cell(ndim,1);
-    % construct the neighborhood
-    fr=floor(r);
-    for di=1:ndim
-    %     tmp = unique( round( logspace(0, log10(fr), st)-1 ) );    
-        N{di}=  -fr:st:fr;
-        I{di}=1:sz(di);
-    end
-    [N{1:ndim}]=ndgrid(N{:});
-    [I{1:ndim}]=ndgrid(I{:});
-    N = cellfun(tovec, N, 'UniformOutput',false);
-    N=[N{:}];
-    I = cellfun(tovec, I, 'UniformOutput',false);
-    I=[I{:}];
-    
-    % compute N radius according to p
-    switch lower(p)
-        case {'1','l1',1}
-            R = sum(abs(N),2);
-        case {'2','l2',2}
-            R = sum(N.*N,2);
-            r=r*r;
-        case {'inf',inf}
-            R = max(abs(N),[],2);
-        otherwise
-            error('sparse_adj_matrix:norm_type','Unknown norm p (should be either 1,2 or inf');
-    end
-    N = N(R<=r+eps,:);
-    
-    % "to"-index (not linear indices)
-    ti = bsxfun(@plus, permute(I,[1 3 2]), permute(N, [3 1 2]));
-    sel = all(ti >= 1, 3) & all( bsxfun(@le, ti, permute(sz, [1 3 2])), 3);
-    csz = cumprod([1 sz(1:(ndim-1))]);
-    jj = sum( bsxfun(@times, ti-1, permute(csz, [1 3 2])), 3)+1; % convert to linear indices
-    ii = repmat( (1:n)', [1 size(jj,2)]);
-    jj = jj(sel(:));
-    ii = ii(sel(:));
 end
 
 
