@@ -32,7 +32,7 @@ def main():
     2 - Build trajectory
         Use pre-planned poses from an CSV file
         Set timing for when to achieve each pose
-        Optionally, set Velocity and Acceleration desired at each pose waypoint
+        Set Velocity and Acceleration desired at each pose waypoint
     3 - Send trajectory to robot for execution
     """
 
@@ -44,25 +44,25 @@ def main():
 
     # Load Trajectory Plan (list of joints)
     cwd = os.path.dirname(os.path.realpath(__file__))
-    traj_plan_file_name = "sample_trajectory.csv"
+    traj_plan_file_name = "trajectory.csv"
     traj_plan_file_path = open(os.path.join(cwd,traj_plan_file_name))
+
     joint_array = np.genfromtxt(traj_plan_file_path, delimiter=",")
     rospy.loginfo("Imported Array of Shape: " + str(np.shape(joint_array)))
 
     # Loop through Trajectory Plan
     # Note: velocities should be all 0 for the first and last trajectory point
-    t = 0
-    i = 0
     for i, row in enumerate(joint_array):
-        t += 2
-        # rowx = np.deg2rad(row)
         rowx = np.ndarray.tolist(row)
-        rowx = [0 if x != x else x for x in rowx]
+        # rowx = [0 if x != x else x for x in rowx]
 
-        # Set Velocity
-        vel = [0.05] * len(joint_names)
 
-        traj_plan.add_joint_waypoint(rowx, t, vel)
+        tt = float(rowx[0])
+        posn = rowx[1:7]
+        velo = rowx[7:13]
+        accl = rowx[13:19]
+
+        traj_plan.add_joint_waypoint(tt, posn, velo, accl)
         rospy.logdebug("Added Waypoint #%s.  Waypoint: %s", i, rowx)
     
     # Send Plan

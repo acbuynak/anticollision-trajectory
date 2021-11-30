@@ -68,22 +68,23 @@ class SimpleTrajectoryActionClient():
                 time_from_start = rospy.Duration( 0.0)
                 )
             )
-        print([0.0] * len(self.goal.trajectory.joint_names))
 
 
-    def add_joint_waypoint(self, joint_values, time_posn, vel):
+    def add_joint_waypoint(self,  tt, posn, velo, accl):
         """
         Add waypoint to trajectory plan.
 
-        param:  joint_values:   ordered list of joint values
-        param:  time_posn:      time (sec) when waypoint should be achieved
-        param:  vel:            velocity of trajectory when waypoint achieved
+        param:  t:      time (sec) when waypoint should be achieved
+        param:  posn:   joint position of waypoint
+        param:  velo:   velocity of trajectory when waypoint achieved
+        param:  accl:   acceleration of trajectory when waypoint achieved
         """
 
         newpoint = JointTrajectoryPoint(
-            positions       = joint_values,
-            velocities      = vel, 
-            time_from_start = rospy.Duration(time_posn)
+            positions       = posn,
+            velocities      = velo, 
+            accelerations   = accl,
+            time_from_start = rospy.Duration(tt)
             )
         self.goal.trajectory.points.append(newpoint)
 
