@@ -292,9 +292,9 @@ C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 
 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);                           % Is the point at an obstacle or not
 Pd = ((XYZgoal(1) - C{1,1}).^2 + (XYZgoal(2) - C{2,1}).^2 + ...             % Weight of the distance to the goal configuration
-     (XYZgoal(3) - C{3,1}).^2)./1000000;                                    % the 1 million comes from taking a division of 1000 from inside the square, 1000*1000 = 1000000
+     (XYZgoal(3) - C{3,1}).^2)./1000000;
 
-Pt = Po + simplify(collect(Pd),"Steps",10);
+Pt = Po + Pd;Pt = double(Pt);
 
 [Pj1,Pj2,Pj3] = gradient(Pt);
 
@@ -305,15 +305,10 @@ sum(isnan(Pj2(:)));sum(isnan(Pj3(:)))];
 figure(1)
 hold on
 scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:))
-quiver3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,Pj1(:),Pj2(:),Pj3(:))
-xlabel('X');ylabel('Y');zlabel('Z');
 colorbar
 hold off
 figure(6)
-scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:));
-hold on
-quiver3(j1g(:),j2g(:),j3g(:),Pj1(:),Pj2(:),Pj3(:))
-xlabel('Joint 1');ylabel('Joint 2');zlabel('Joint 3');
+scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:))
 colorbar
 
 %%% Figure
@@ -324,14 +319,14 @@ colorbar
 
 clc;count = 0;
 
-%%% Adjacency Map - Written in case we wanted to use a graph search
-%%% algorithm
+%%% Adjacency Map
 % Create a matrix of n by n where every colum is a given node and its
 % corresponding rows are 1 of the node touches the nth node or 0 if it does
 % not
 % Examples: https://stackoverflow.com/questions/30465259/create-an-adjacency-matrix-matlab
 % https://stackoverflow.com/questions/3277541/construct-adjacency-matrix-in-matlab
 %
+
 % sz = [n1,n2,n3];
 % [ii, jj] = adjmatrix(sz, 2, inf, 1);
 % Conectivity = sparse(ii, jj, ones(1,numel(ii)), nj, nj);
@@ -339,7 +334,6 @@ clc;count = 0;
 % G = digraph(Conectivity);
 % G.Edges.Weight = Weight';
 % plot(G)
-
 set(0,'DefaultFigureWindowStyle','normal')
 %% Trajectory Generation - Motion between Waypoints - In jnt coordinates
 % A function of some polynomial trajectory scheme and a search algorithm

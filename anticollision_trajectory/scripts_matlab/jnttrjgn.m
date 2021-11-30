@@ -14,13 +14,9 @@ njnt = size([PathObj.Segment(1).Start],1);
         Amax = PathObj.Segment(ii).Awmax;
         ta = Vmax/Amax; tf = 2*ta;
         
-        PathObj.Jnt.jnt = zeros(njnt,hrz*tf);
-        PathObj.Jnt.jntd = (Vmax + 0.01)*ones(njnt,hrz*tf);
-        PathObj.Jnt.jntdd = (Amax + 0.01)*ones(njnt,hrz*tf);
-        
-        s.s = PathObj.Jnt.jnt;
-        s.sd = PathObj.Jnt.jntd;
-        s.sdd = PathObj.Jnt.jntdd;
+        s.s = zeros(njnt,hrz*tf);
+        s.sd = (Vmax + 0.01)*ones(njnt,hrz*tf);
+        s.sdd = (Amax + 0.01)*ones(njnt,hrz*tf);
 
         s.T = [];
 
@@ -56,57 +52,59 @@ njnt = size([PathObj.Segment(1).Start],1);
         PathObj.Segment(ii).tvct = s.T;
 
         if ii == 1
+            ii
             PathObj.Jnt.jnt = s.s;
             PathObj.Jnt.jntd = s.sd;
             PathObj.Jnt.jntdd = s.sdd;
             PathObj.tvct = s.T;
         else
-            PathObj.Jnt.jnt = [[PathObj.Jnt.jnt],[s.s]];
-            PathObj.Jnt.jntd = [PathObj.Jnt.jntd,s.sd];
-            PathObj.Jnt.jntdd = [PathObj.Jnt.jntdd,s.sdd];
-            PathObj.tvct = [PathObj.tvct,s.T(1:end)+PathObj.tvct(end)];
+            ii
+            PathObj.Jnt.jnt = [PathObj.Jnt.jnt, (s.s(:,2:end))];
+            PathObj.Jnt.jntd = [PathObj.Jnt.jntd, (s.sd(:,2:end))];
+            PathObj.Jnt.jntdd = [PathObj.Jnt.jntdd, (s.sdd(:,2:end))];
+            PathObj.tvct = [PathObj.tvct, (s.T(2:end)) + PathObj.tvct(end)];
+
         end
 
         figure(80+njnt)
         subplot(3,1,1)
-%         plot(PathObj.tvct,PathObj.Jnt.jnt(1,:),'r-',...
-%              PathObj.tvct,PathObj.Jnt.jnt(2,:),'b-',...
-%              PathObj.tvct,PathObj.Jnt.jnt(3,:),'g-',...
-%              PathObj.tvct,PathObj.Jnt.jnt(4,:),'y-',...
-%              PathObj.tvct,PathObj.Jnt.jnt(5,:),'p-',...
-%              PathObj.tvct,PathObj.Jnt.jnt(6,:),'o-')
-%         legend('q1','q2','q3','q4','q5','q6')
-%         ylabel('Position Radians')
-%         xlabel('Time seconds')
-%         grid on
-%         subplot(3,1,2)
-%         plot( PathObj.tvct,PathObj.Jnt.jntd(1,:),'r-',...
-%               PathObj.tvct,PathObj.Jnt.jntd(2,:),'b-',...
-%               PathObj.tvct,PathObj.Jnt.jntd(3,:),'g-',...
-%               PathObj.tvct,PathObj.Jnt.jntd(4,:),'y-',...
-%               PathObj.tvct,PathObj.Jnt.jntd(5,:),'p-',...
-%               PathObj.tvct,PathObj.Jnt.jntd(6,:),'o-')
-%         legend('qd1','qd2','qd3','qd4','qd5','qd6')
-%         ylabel('Velocity')
-%         xlabel('Time seconds')
-%         grid on
-%         subplot(3,1,3)
-%         plot( PathObj.tvct,PathObj.Jnt.jntdd(1,:),'r-',...
-%               PathObj.tvct,PathObj.Jnt.jntdd(2,:),'b-',...
-%               PathObj.tvct,PathObj.Jnt.jntdd(3,:),'g-',...
-%               PathObj.tvct,PathObj.Jnt.jntdd(4,:),'y-',...
-%               PathObj.tvct,PathObj.Jnt.jntdd(5,:),'p-',...
-%               PathObj.tvct,PathObj.Jnt.jntdd(6,:),'o-')
-%         legend('qdd1','qdd2','qdd3','qdd4','qdd5','qdd6')
-%         ylabel('Acceleration')
-%         xlabel('Time seconds')
-%         grid on
-% 
-%     end
-% 
-% TT = timetable(PathObj.Jnt.jnt',PathObj.Jnt.jntd',PathObj.Jnt.jntdd','SampleRate',hrz);
-% TT.Properties.VariableNames = {'Position','Velocity','Acceleration'};
-TT = [];
+        plot(PathObj.tvct,PathObj.Jnt.jnt(1,:),'r-',...
+             PathObj.tvct,PathObj.Jnt.jnt(2,:),'b-',...
+             PathObj.tvct,PathObj.Jnt.jnt(3,:),'g-',...
+             PathObj.tvct,PathObj.Jnt.jnt(4,:),'y-',...
+             PathObj.tvct,PathObj.Jnt.jnt(5,:),'p-',...
+             PathObj.tvct,PathObj.Jnt.jnt(6,:),'o-')
+        legend('q1','q2','q3','q4','q5','q6')
+        ylabel('Position Radians')
+        xlabel('Time seconds')
+        grid on
+        subplot(3,1,2)
+        plot( PathObj.tvct,PathObj.Jnt.jntd(1,:),'r-',...
+              PathObj.tvct,PathObj.Jnt.jntd(2,:),'b-',...
+              PathObj.tvct,PathObj.Jnt.jntd(3,:),'g-',...
+              PathObj.tvct,PathObj.Jnt.jntd(4,:),'y-',...
+              PathObj.tvct,PathObj.Jnt.jntd(5,:),'p-',...
+              PathObj.tvct,PathObj.Jnt.jntd(6,:),'o-')
+        legend('qd1','qd2','qd3','qd4','qd5','qd6')
+        ylabel('Velocity')
+        xlabel('Time seconds')
+        grid on
+        subplot(3,1,3)
+        plot( PathObj.tvct,PathObj.Jnt.jntdd(1,:),'r-',...
+              PathObj.tvct,PathObj.Jnt.jntdd(2,:),'b-',...
+              PathObj.tvct,PathObj.Jnt.jntdd(3,:),'g-',...
+              PathObj.tvct,PathObj.Jnt.jntdd(4,:),'y-',...
+              PathObj.tvct,PathObj.Jnt.jntdd(5,:),'p-',...
+              PathObj.tvct,PathObj.Jnt.jntdd(6,:),'o-')
+        legend('qdd1','qdd2','qdd3','qdd4','qdd5','qdd6')
+        ylabel('Acceleration')
+        xlabel('Time seconds')
+        grid on
+
+    end
+
+TT = timetable(PathObj.Jnt.jnt',PathObj.Jnt.jntd',PathObj.Jnt.jntdd','SampleRate',hrz);
+TT.Properties.VariableNames = {'Position','Velocity','Acceleration'};
 
 end
 

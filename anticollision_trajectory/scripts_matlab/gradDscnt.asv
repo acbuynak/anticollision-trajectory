@@ -17,7 +17,6 @@ Pg = sym('Pg_',[1 n],'real');
 
 toll = Gama.toll;
 gama = Gama.gama;
-
 error = inf;
 
 jn = j0;
@@ -27,27 +26,15 @@ ii = 1;
 while error >=tolerance
     
     [S1, S2, S3] = ind2sub([a1,a2,a3] ,find(grid == jn));
-    I = sub2ind(nPf, S1, S2, S3);
     Pn = Pfield(S1,S2,S3);
-   
+    I = sub2ind(nPf, S1, S2, S3);
     Pn_1 = (Pn) - (gama* (Pg1g(I) + Pg2g(I) + Pg3g(I)));
-    
     egrid(:) = norm(Pfield(:) - Pn_1);
 
     [~,indices] = min(egrid(:));
 
-    ni = numel(indices);
+    sige(indices)
     
-    if ni == 1
-      [S1, S2, S3] =  ind2sub([a1,a2,a3] ,indices);
-    else
-        S1a(1:ni) = 0; S2a(1:ni) = 0; S3a(1:ni) = 0;
-
-
-    
-    end
-    
-    error = norm(jn_1 - jn);
 
 
 
