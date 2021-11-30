@@ -61,7 +61,8 @@ SwivelBase.qf = sym([ sym('40.0'), 0, sym('330.0')]');                      % Lo
 SwivelBase.Rc = sym('Rcom1',[3,3],'real');                                  % Rotation from the joint base frame to COM frame
 SwivelBase.Rf = sym('Rf1',[3,3],'real');                                    % Rotation from the joint base frame to output frame
 SwivelBase.lmts = sym((-170:resj:170)*(pi/180));                            % Joint Limits [min,max]
-[F, V, C] = ftread('gp7_s_axis.stl.stl');                                   % Brings in the STL information as arrays
+% Brings in the STL information as arrays
+[F, V, C] = ftread('\robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_s_axis.stl.stl'); 
 SwivelBase.F = F; SwivelBase.V = sym(round(V,4)); SwivelBase.C = C;         % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
 
 % Joint 2 - Lower Arm
@@ -75,7 +76,8 @@ LowerArm.qf = ([ sym('40.0'), 0, sym('715.0')]');                           % Lo
 LowerArm.Rc = sym('Rcom2',[3,3],'real');                                    % Rotation from the joint base frame to COM frame
 LowerArm.Rf = sym('Rf2',[3,3],'real');                                      % Rotation from the joint base frame to output frame
 LowerArm.lmts = sym((-65:resj:145)*(pi/180));                               % Joint Limits [min,max]
-[F, V, C] = ftread('gp7_l_axis.stl.stl');                                   % Brings in the STL information as arrays
+% Brings in the STL information as arrays
+[F, V, C] = ftread('\robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_l_axis.stl.stl');    
 LowerArm.F = F; LowerArm.V = sym(round(V,4)); LowerArm.C = C;               % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
 
 % Joint 3 - Upper Arm
@@ -89,7 +91,8 @@ UpperArm.qf = ([ sym('40.0'), 0, sym('715.0')]');                           % Lo
 UpperArm.Rc = sym('Rcom3',[3,3],'real');                                    % Rotation from the joint base frame to COM frame
 UpperArm.Rf = sym('Rf3',[3,3],'real');                                      % Rotation from the joint base frame to output frame
 UpperArm.lmts = sym((-70:resj:190)*(pi/180));                               % Joint Limits [min,max]
-[F, V, C] = ftread('gp7_u_axis.stl.stl');                                   % Brings in the STL information as arrays
+% Brings in the STL information as arrays
+[F, V, C] = ftread('\robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_u_axis.stl.stl');    
 UpperArm.F = F; UpperArm.V = sym(round(V,4)); UpperArm.C = C;               % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
 
 % Joint 4 - Arm Roll
@@ -103,7 +106,8 @@ ArmRoll.qf = ([sym('380'), 0, sym('715.0')]');                              % Lo
 ArmRoll.Rc = sym('Rcom4',[3,3],'real');                                     % Rotation from the joint base frame to COM frame
 ArmRoll.Rf = sym('Rf4',[3,3],'real');                                       % Rotation from the joint base frame to output frame
 ArmRoll.lmts = sym((-190:resj:190)*(pi/180));                               % Joint Limits [min,max]
-[F, V, C] = ftread('gp7_r_axis.stl.stl');                                   % Brings in the STL information as arrays
+% Brings in the STL information as arrays
+[F, V, C] = ftread('\robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_r_axis.stl.stl');  
 ArmRoll.F = F; ArmRoll.V = sym(round(V,4)); ArmRoll.C = C;                  % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
 
 % Joint 5 - Wrist Bend
@@ -117,7 +121,8 @@ WristBend.qf = ([sym('460'), 0, sym('715.0')]');                            % Lo
 WristBend.Rc = sym('Rcom5',[3,3],'real');                                   % Rotation from the joint base frame to COM frame
 WristBend.Rf = sym('Rf5',[3,3],'real');                                     % Rotation from the joint base frame to output frame
 WristBend.lmts = sym((-135:resj:135)*(pi/180));                             % Joint Limits [min,max]
-[F, V, C] = ftread('gp7_b_axis.stl.stl');                                   % Brings in the STL information as arrays
+% Brings in the STL information as arrays
+[F, V, C] = ftread('\robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_b_axis.stl.stl');                                   
 WristBend.F = F; WristBend.V = sym(round(V,4)); WristBend.C = C;            % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
 
 % Joint 6 - Tool Flange
@@ -131,7 +136,8 @@ ToolFlange.qf = ([sym('460'), 0, sym('715.0')]');                           % Lo
 ToolFlange.Rc = sym('Rcom6',[3,3],'real');                                  % Rotation from the joint base frame to COM frame
 ToolFlange.Rf = sym('Rf6',[3,3],'real');                                    % Rotation from the joint base frame to output frame
 ToolFlange.lmts = sym((-360:resj:360)*(pi/180));                            % Joint Limits [min,max]
-[F, V, C] = ftread('gp7_t_axis.stl.stl');                                   % Brings in the STL information as arrays
+% Brings in the STL information as arrays
+[F, V, C] = ftread('\robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_t_axis.stl.stl');
 ToolFlange.F = F; ToolFlange.V = sym(round(V,4)); ToolFlange.C = C;         % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
 
 % EE frame in null configuration
