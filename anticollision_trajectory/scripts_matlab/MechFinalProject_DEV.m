@@ -10,13 +10,8 @@
 %   
 % To the best extent of our abilities most relevant code
 % is included in this master file
-%% Robot URDF Import
-% [READ] this file format needs to be converted to URDF before it can be
-% used, a method for converting XACRO to URDF using a ROS terminal is
-% outlined in https://www.mathworks.com/matlabcentral/answers/422381-how-do-i-import-xacro-files-as-rigid-body-trees-in-robotics-system-toolbox
-% 
-% GP7urdf = urdfparse("GP7 Suppot Files\urdf\gp7.xacro");
-%% Initialization
+
+% Initialization
 % Define variables and matrixes needed to solve the porblem
 clear;clc;
 syms pi real                                                                % Numeric variables
@@ -29,6 +24,16 @@ EE = sym([R_E,P_E;[0,0,0,1]]);                                              % De
 resj = 10;                                                                  % Resolution of the sampling grids in joint space in degrees
 resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
 rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
+
+% Robot URDF Import
+% [READ] this file format needs to be converted to URDF before it can be
+% used, a method for converting XACRO to URDF using a ROS terminal is
+% outlined in https://www.mathworks.com/matlabcentral/answers/422381-how-do-i-import-xacro-files-as-rigid-body-trees-in-robotics-system-toolbox
+% 
+GP7 = importrobot('gp7.urdf','DataFormat','column');
+show(GP7)
+viz = interactiveRigidBodyTree(GP7);
+% Initialization
 
 % Forward Kinematics of Desired Robot
 
@@ -364,6 +369,12 @@ hrz = rest;
 TT.Properties.VariableUnits = {'rads','rads/sec','rads/(sec^2)'};
 writetimetable(TT,'Trajectory.csv','Delimiter','bar');
 
+%% vizualisation
+for ii = 1:length(TrjObj.tvct)
+    config = [TrjObj.Jnt.jnt(:,ii)]
+    show(GP7,config);
+    pause(1/rest)
+end
 %% Included Functions
 
 function AdT = Adjoint(T)
