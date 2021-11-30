@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Tier1 Launch File for TESTING -->
+
+<launch>
+
+     <!-- Open RQT for analysis with a custom perspective -->
+     <node name = "RQT_TestViewer" pkg = "rqt_gui" type = "rqt_gui" respawn = "false" output = "screen" 
+          args = "--perspective-file $(find anticollision_trajectory)/config/joint_plots.perspective"/>  
+
+</launch>

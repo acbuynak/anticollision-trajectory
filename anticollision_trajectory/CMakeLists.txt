@@ -12,5 +12,5 @@ catkin_package()
 ######################################
 ## Install
 
-install(DIRECTORY launch scripts scripts_matlab
+install(DIRECTORY config launch scripts scripts_matlab
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
