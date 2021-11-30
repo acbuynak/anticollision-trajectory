@@ -37,7 +37,7 @@ def main():
     """
 
     # Parameters
-    joint_names = ['joint_1_s', 'joint_2_l', 'joint_3_u', 'joint_4_r', 'joint_5_b', 'joint_6_t']
+    joint_names = rospy.get_param('/controller_joint_names')
     
     # Setup Control Client
     traj_plan = SimpleTrajectoryActionClient(joint_names)
