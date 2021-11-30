@@ -13,6 +13,7 @@
 
 % Initialization
 % Define variables and matrixes needed to solve the porblem
+
 clear;clc;
 syms pi real                                                                % Numeric variables
 syms x y z real                                                             % Computational Variables
