@@ -2,7 +2,7 @@ function xseq = gradDscnt(Startj,Endj,Startc,Endc,Pfield,coordaxes,Gama,Tf)
 % consider a startpoint, Start, and and ending point, End, in n-dimensional
 % space with n coordinates to each. An n-dimensional field of weights to be
 % minimized (n-dimensional double)
- r = rateControl(160);
+ r = rateControl(120);
 nax = size(coordaxes,2);
 [a1,a2,a3] = size(Pfield);
 % nPf = numel(Pfield);
