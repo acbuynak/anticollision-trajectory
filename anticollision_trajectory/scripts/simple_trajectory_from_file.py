@@ -45,21 +45,25 @@ def main():
     # Load Trajectory Plan (list of joints)
     cwd = os.path.dirname(os.path.realpath(__file__))
     traj_plan_file_name = "trajectory.csv"
-    traj_plan_file_path = open(os.path.join(cwd,traj_plan_file_name))
+    traj_plan_file_path = os.path.join(cwd,traj_plan_file_name)
 
-    imported_array = np.genfromtxt(traj_plan_file_path, delimiter="|")
-    traj_array = imported_array[1:,:]
-    traj_array[:,0] = traj_array[:,0][:-4]
-    rospy.loginfo("Imported Array of Shape: " + str(np.shape(traj_array)))
+    traj_array = np.zeros((1,19))
+    with open(traj_plan_file_path) as csvfile:
+        reader = csv.reader(csvfile, delimiter='|')
+        next(reader, None) # skip header
 
-    print(traj_array[0:5,0])
+        for i, row in enumerate(reader):
+            temp_row = np.zeros((1,19))
+            temp_row[0,0] = float(str(row[0])[:-4])
+            temp_row[0,1:] = row[1:]
+            traj_array = np.vstack((traj_array, temp_row))
+
 
     # Loop through Trajectory Plan
     # Note: velocities should be all 0 for the first and last trajectory point
     for i, row in enumerate(traj_array):
         rowx = np.ndarray.tolist(row)
         # rowx = [0 if x != x else x for x in rowx]
-
 
         tt = float(rowx[0])
         posn = rowx[1:7]
