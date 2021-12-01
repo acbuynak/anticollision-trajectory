@@ -261,7 +261,6 @@ j5 = subs(robot.Jnts(5).lmts,'pi',pi);j6 = subs(robot.Jnts(6).lmts,'pi',pi);
 
 disp([n1,n2,n3,n4,n5,n6,nj]);
 disp('ready for Pt')
-pause(0.5)
 
 % This step takes a bit to process but its actually really good all things
 % considered, only tought for 4 joints
@@ -291,42 +290,51 @@ XYZgoal = Tf(Jntgoal(1),Jntgoal(2),Jntgoal(3),Jntgoal(4),Jntgoal(5),Jntgoal(6));
 
 C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 
-Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);                           % Is the point at an obstacle or not
-Pf = (1/2)*((1/C{3,1})./1000).^2;                                           % Force Pushing away from the floor                       
-Pd = (1/2)*(((XYZgoal(1) - C{1,1})./1000).^2 +...                           
+%
+clc
+X = double(C{1,1}); Y = double(C{2,1}); Z = double(C{3,1});
+disp('half way Pt1')
+Po = double(Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000));                   % Is the point at an obstacle or not
+Pf = double((1/2)*((1./C{3,1})./1000).^2);                                  % Force Pushing away from the floor                       
+Pd = double((1/2)*(((XYZgoal(1) - C{1,1})./1000).^2 +...                           
             ((XYZgoal(2) - C{2,1})./1000).^2 + ...                          % Weight of the distance to the goal configuration, further out more potential
-            ((XYZgoal(3) - C{3,1})./1000).^2);                                    
+            ((XYZgoal(3) - C{3,1})./1000).^2));                                    
 
-disp('half way Pt')
+disp('half way Pt2')
 % Normalize Po, Pf and Pd so they can be added up with weights later
-minPo = min(Po(:));maxPo = max(Po(:));
-Po = (Po - minPo)./(maxPo - minPo);
-minPf = min(Pf(:));maxPf = max(Pf(:));
-Pf = (Pf - minPf)./(maxPf - minPf);
-minPd = min(Pd(:));maxPd = max(Pd(:));
-Pd = (Pd - minPo)./(maxPd - minPd);
+% minPo = min(Po(:));maxPo = max(Po(:));
+% Po = (Po - minPo)./(maxPo - minPo);
+% minPf = min(Pf(:));maxPf = max(Pf(:));
+% Pf = (Pf - minPf)./(maxPf - minPf);
+% minPd = min(Pd(:));maxPd = max(Pd(:));
+% Pd = (Pd - minPo)./(maxPd - minPd);
 
 % Superimpose all potential fields 
 disp('almost there Pt')
-cnto = 1; cntd = 1; cntf = 1;                                               % select the weights to assign each potential field
-Pt = double(cnt*Po + cntd*Pd + cntf*Pf);
+cnto = 0; cntd = 1; cntf = 1;                                               % select the weights to assign each potential field
+Pt = double(cnto*Po + cntd*Pd + cntf*Pf);
 
 % Get the gradient of each potential field, for the cale of generating a
 % vizual
-[Po1,Po2,Po3] = gradient(Po);
+[Po1,Po2,Po3] = gradient(Po); 
 [Pf1,Pf2,Pf3] = gradient(Pf);
 [Pd1,Pd2,Pd3] = gradient(Pd);
 [Pt1,Pt2,Pt3] = gradient(Pt);
 clc
 disp('done with Potential fields')
 pause(0.5)
-check = [sum(isinf(Pt1(:)));sum(isinf(Pt2(:)));
-sum(isinf(Pt3(:)));sum(isnan(Pt1(:)));
-sum(isnan(Pt2(:)));sum(isnan(Pt3(:)))];
+check = sum([sum(isinf(Pt1(:)));sum(isinf(Pt2(:)));
+             sum(isinf(Pt3(:)));sum(isnan(Pt1(:)));
+             sum(isnan(Pt2(:)));sum(isnan(Pt3(:)))]);
+
+if check == 1
+    return 
+end
 
 set(0,'DefaultFigureWindowStyle','docked')
 
-figure(5) = figure(1);
+disp('Ploting Potential fields')
+figure(5)
 hold on;
 scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:));colorbar;
 xlabel('X');ylabel('Y');zlabel('Z');
@@ -342,7 +350,7 @@ clc
 %%
 clc
 Gama.toll = 1e-3;
-Gama.gama = 1;
+Gama.gama = .05;
 Pfield = Pt;
 coordaxes = struct('dir',[]);
 coordaxes(1).dir = j1; coordaxes(2).dir = j2; coordaxes(3).dir = j3;
@@ -353,14 +361,13 @@ XYZ = zeros(3,length(jseq));
 for ii = 1:length(jseq)
     XYZ(:,ii) = double(Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
 end
-
+set(0,'DefaultFigureWindowStyle','docked')
 figure(7)
 show(GP7); hold on
 scatter3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
 plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
-
 hold off
-
+set(0,'DefaultFigureWindowStyle','normal')
 
 %%% Figure
 % This next figure looses meaning when seen in higher than 3 dimensions, if
