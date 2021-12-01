@@ -1,19 +1,17 @@
-Gama.toll = 1e-3;
-Gama.gama = 0.1;
 
-%function [] = gradDscnt(Start,End,Pfield,axes,Gama)
+function xseq = gradDscnt(Start,End,Pfield,coordaxes,Gama)
 % consider a startpoint, Start, and and ending point, End, in n-dimensional
 % space with n coordinates to each. An n-dimensional field of weights to be
 % minimized (n-dimensional double)
 
-nax = size(axes);
+nax = size(coordaxes);
 [a1,a2,a3] = size(Pfield);
-nPf = numel(Pfield);
-j0 = Start(1:n); je = End((1:n));
-c0 = Start(end-n:end); ce = End(end-n:end);
+% nPf = numel(Pfield);
+j0 = Start;
+je = End;
 Pg = sym('Pg_',[1 n],'real');
 
-[Pg1g,Pg2g,Pg3g] = gradient(Pfield);
+[Pg(1),Pg(2), Pg(3)] = gradient(Pfield);
 
 toll = Gama.toll;
 gama = Gama.gama;
@@ -23,34 +21,41 @@ error = inf;
 jn = j0;
 
 ii = 1;
+xseq(:,ii) = jn;
+while error >= toll
+    disp(error)
+    S1n = find(coordaxes(1).dir == jn(1));
+    S2n = find(coordaxes(2).dir == jn(2));
+    S3n = find(coordaxes(3).dir == jn(3));
+    In = sub2ind([a1,a2,a3], S1n, S2n, S3n);
 
-while error >=tolerance
+    Pn = Pfield(In);
+    Pn_1 = (Pn) - (gama* (Pg1g(In) + Pg2g(In) + Pg3g(In)));
     
-    [S1, S2, S3] = ind2sub([a1,a2,a3] ,find(grid == jn));
-    I = sub2ind(nPf, S1, S2, S3);
-    Pn = Pfield(S1,S2,S3);
-   
-    Pn_1 = (Pn) - (gama* (Pg1g(I) + Pg2g(I) + Pg3g(I)));
+    egrid1 = abs((Pfield - Pn_1));
     
-    egrid(:) = norm(Pfield(:) - Pn_1);
-
-    [~,indices] = min(egrid(:));
+    [~,indices] = min(egrid1(:));
 
     ni = numel(indices);
     
     if ni == 1
-      [S1, S2, S3] =  ind2sub([a1,a2,a3] ,indices);
+        Pn_1 = Pfield(indices);
+        [S1n_1,S2n_1,S3n_1] = ind2sub([a1,a2,a3],indices);
+        jn_1 = [coordaxes(1).dir(S1n_1),coordaxes(2).dir(S2n_1),coordaxes(3).dir(S3n_1),0,0,0];
+        
     else
-        S1a(1:ni) = 0; S2a(1:ni) = 0; S3a(1:ni) = 0;
-
-
-    
+        disp('multy nodes')
+        escape
     end
     
-    error = norm(jn_1 - jn);
-
+    error = double(sqrt(sum((je' - jn_1').^2)));
+    
+    ii = ii+1;
+    xseq(:,ii) = jn_1;
+    jn = jn_1;
+    Pn = Pn_1;
 
 
 end
 
-%end
+end

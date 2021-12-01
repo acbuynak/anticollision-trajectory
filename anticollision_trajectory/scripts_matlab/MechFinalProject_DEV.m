@@ -21,18 +21,18 @@ P_E = sym('PE_', [3,1], 'real');                                            % De
 EE = sym([R_E,P_E;[0,0,0,1]]);                                              % Desired End Effector Transformation
 
 % Ressolution, in radians, of the joint limits for sampling
-resj = 20;                                                                  % Resolution of the sampling grids in joint space in degrees
+resj = 15;                                                                  % Resolution of the sampling grids in joint space in degrees
 resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
 rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
 
 % Robot URDF Import
 GP7 = importrobot('gp7.urdf','DataFormat','column');
 figure(1)
-robotax = show(GP7);
-pause(0.1)
+show(GP7);
+pause(0.5)
 % figure(2)
 viz = interactiveRigidBodyTree(GP7);
-pause(0.1)
+pause(0.5)
 
 % Forward Kinematics of Desired Robot - Define diferent characteristics
 % of the robot in Product Of Exponential convention w.r.t the baseframe
@@ -213,8 +213,9 @@ clear SwivelBase LowerArm UpperArm ArmRoll WristBend ToolFlange
 clc
 
 disp('Done Section 1')
+pause(0.5)
 set(0,'DefaultFigureWindowStyle','normal')
-%% Search Algorithms
+% Search Algorithms
 % Define the Potential Fields in some manner
 % Obstacle Potential Fields
 set(0,'DefaultFigureWindowStyle','docked')
@@ -239,9 +240,9 @@ axis(LIMS)
 xlabel('X');ylabel('Y');zlabel('Z');
 title('Obstacle Potential Field')
 grid on
-pause(0.1)
+pause(0.5)
 set(0,'DefaultFigureWindowStyle','normal')
-%% Do Forward Kinematics and get weights
+% Do Forward Kinematics and get weights
 set(0,'DefaultFigureWindowStyle','docked')
 clc
 n1 = numel(robot.Jnts(1).lmts);
@@ -262,6 +263,8 @@ j5 = subs(robot.Jnts(5).lmts,'pi',pi);j6 = subs(robot.Jnts(6).lmts,'pi',pi);
 [j1g,j2g,j3g] = ndgrid(j1,j2,j3);
 
 disp([n1,n2,n3,n4,n5,n6,nj]);
+disp('ready for Pt')
+pause(0.5)
 
 % This step takes a bit to process but its actually really good all things
 % considered, only tought for 4 joints
@@ -291,30 +294,60 @@ XYZgoal = Tf(Jntgoal(1),Jntgoal(2),Jntgoal(3),Jntgoal(4),Jntgoal(5),Jntgoal(6));
 C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 
 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);                           % Is the point at an obstacle or not
+% Normalize Po
+minPo = min(Po(:));maxPo = max(Po(:));
+Po = (Po - minPo)./(maxPo - minPo);
+
 Pd = ((XYZgoal(1) - C{1,1}).^2 + (XYZgoal(2) - C{2,1}).^2 + ...             % Weight of the distance to the goal configuration
      (XYZgoal(3) - C{3,1}).^2)./1000000;                                    % the 1 million comes from taking a division of 1000 from inside the square, 1000*1000 = 1000000
+% Normalize Pd
+minPd = min(Pd(:));maxPd = max(Pd(:));
+Pd = (Pd - minPo)./(maxPd - minPd);
 
-Pt = Po + simplify(collect(Pd),"Steps",10);
+% Superimpose both potential fields
+Pt = double(Po + Pd);
 
 [Pj1,Pj2,Pj3] = gradient(Pt);
-
+clc
+disp('done with Pt')
+pause(0.5)
 check = [sum(isinf(Pj1(:)));sum(isinf(Pj2(:)));
 sum(isinf(Pj3(:)));sum(isnan(Pj1(:)));
 sum(isnan(Pj2(:)));sum(isnan(Pj3(:)))];
 
+set(0,'DefaultFigureWindowStyle','docked')
 figure(1)
-hold on
-scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:))
-quiver3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,Pj1(:),Pj2(:),Pj3(:))
+hold on;
+scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:));colorbar;
 xlabel('X');ylabel('Y');zlabel('Z');
-colorbar
+quiver3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,Pj1(:),Pj2(:),Pj3(:))
 hold off
 figure(6)
-scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:));
+scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:));colorbar
 hold on
 quiver3(j1g(:),j2g(:),j3g(:),Pj1(:),Pj2(:),Pj3(:))
 xlabel('Joint 1');ylabel('Joint 2');zlabel('Joint 3');
-colorbar
+set(0,'DefaultFigureWindowStyle','normal')
+clc
+Gama.toll = 1e-3;
+Gama.gama = .01;
+Pfield = Pt;
+coordaxes = struct('dir',[]);
+coordaxes(1).dir = j1;
+coordaxes(2).dir = j2;
+coordaxes(3).dir = j3;
+
+jseq = gradDscnt(Start,End,Pfield,coordaxes,Gama);
+XYZ = zeros(3,length(jseq));
+for ii = 1:length(jseq)
+    XYZ(:,ii) = double(Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
+end
+
+figure(1)
+hold on
+scatter3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
+plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
+
 
 %%% Figure
 % This next figure looses meaning when seen in higher than 3 dimensions, if
@@ -393,10 +426,10 @@ hrz = rest;
 [TrjObj,TT] = jnttrjgn(PathObj,hrz);
 TT.Properties.VariableUnits = {'rads','rads/sec','rads/(sec^2)'};
 writetimetable(TT,'Trajectory.csv','Delimiter','bar');
-
-pause
+stackedplot(TT); grid on;
 
 % vizualisation
+figure(1)
 for ii = 1:length(TrjObj.tvct)
     config = TrjObj.Jnt.jnt(:,ii);
     show(GP7,config);

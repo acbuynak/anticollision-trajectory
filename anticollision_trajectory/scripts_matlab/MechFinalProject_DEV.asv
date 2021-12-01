@@ -28,7 +28,7 @@ rest = 50;                                                                  % Re
 % Robot URDF Import
 GP7 = importrobot('gp7.urdf','DataFormat','column');
 figure(1)
-robotax = show(GP7);
+show(GP7);
 pause(0.1)
 % figure(2)
 viz = interactiveRigidBodyTree(GP7);
@@ -214,7 +214,7 @@ clc
 
 disp('Done Section 1')
 set(0,'DefaultFigureWindowStyle','normal')
-%% Search Algorithms
+% Search Algorithms
 % Define the Potential Fields in some manner
 % Obstacle Potential Fields
 set(0,'DefaultFigureWindowStyle','docked')
@@ -241,7 +241,7 @@ title('Obstacle Potential Field')
 grid on
 pause(0.1)
 set(0,'DefaultFigureWindowStyle','normal')
-%% Do Forward Kinematics and get weights
+% Do Forward Kinematics and get weights
 set(0,'DefaultFigureWindowStyle','docked')
 clc
 n1 = numel(robot.Jnts(1).lmts);
@@ -291,10 +291,18 @@ XYZgoal = Tf(Jntgoal(1),Jntgoal(2),Jntgoal(3),Jntgoal(4),Jntgoal(5),Jntgoal(6));
 C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 
 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);                           % Is the point at an obstacle or not
-Pd = ((XYZgoal(1) - C{1,1}).^2 + (XYZgoal(2) - C{2,1}).^2 + ...             % Weight of the distance to the goal configuration
-     (XYZgoal(3) - C{3,1}).^2)./1000000;
+% Normalize Po
+minPo = min(Po(:));maxPo = max(Po(:));
+Po = (Po - minPo)./(maxPo - minPo);
 
-Pt = Po + Pd;Pt = double(Pt);
+Pd = ((XYZgoal(1) - C{1,1}).^2 + (XYZgoal(2) - C{2,1}).^2 + ...             % Weight of the distance to the goal configuration
+     (XYZgoal(3) - C{3,1}).^2)./1000000;                                    % the 1 million comes from taking a division of 1000 from inside the square, 1000*1000 = 1000000
+% Normalize Pd
+minPd = min(Pd(:));maxPd = max(Pd(:));
+Pd = (Pd - minPo)./(maxPd - minPd);
+
+% Superimpose both potential fields
+Pt = double(Po + Pd);
 
 [Pj1,Pj2,Pj3] = gradient(Pt);
 
@@ -302,14 +310,39 @@ check = [sum(isinf(Pj1(:)));sum(isinf(Pj2(:)));
 sum(isinf(Pj3(:)));sum(isnan(Pj1(:)));
 sum(isnan(Pj2(:)));sum(isnan(Pj3(:)))];
 
+set(0,'DefaultFigureWindowStyle','docked')
 figure(1)
-hold on
-scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:))
-colorbar
+hold on;
+scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:));colorbar;
+xlabel('X');ylabel('Y');zlabel('Z');
+quiver3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,Pj1(:),Pj2(:),Pj3(:))
 hold off
 figure(6)
-scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:))
-colorbar
+scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:));colorbar
+hold on
+quiver3(j1g(:),j2g(:),j3g(:),Pj1(:),Pj2(:),Pj3(:))
+xlabel('Joint 1');ylabel('Joint 2');zlabel('Joint 3');
+set(0,'DefaultFigureWindowStyle','normal')
+clc
+Gama.toll = 1e-3;
+Gama.gama = .01;
+Pfield = Pt;
+coordaxes = struct('dir',[]);
+coordaxes(1).dir = j1;
+coordaxes(2).dir = j2;
+coordaxes(3).dir = j3;
+
+jseq = gradDscnt(Start,End,Pfield,coordaxes,Gama)
+
+for ii = 1:length(jseq)
+    XYZ(:,ii) = double(Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
+end
+
+figure(1)
+hold on
+scatter3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
+plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
+
 
 %%% Figure
 % This next figure looses meaning when seen in higher than 3 dimensions, if
@@ -319,14 +352,14 @@ colorbar
 
 clc;count = 0;
 
-%%% Adjacency Map
+%%% Adjacency Map - Written in case we wanted to use a graph search
+%%% algorithm
 % Create a matrix of n by n where every colum is a given node and its
 % corresponding rows are 1 of the node touches the nth node or 0 if it does
 % not
 % Examples: https://stackoverflow.com/questions/30465259/create-an-adjacency-matrix-matlab
 % https://stackoverflow.com/questions/3277541/construct-adjacency-matrix-in-matlab
 %
-
 % sz = [n1,n2,n3];
 % [ii, jj] = adjmatrix(sz, 2, inf, 1);
 % Conectivity = sparse(ii, jj, ones(1,numel(ii)), nj, nj);
@@ -334,6 +367,7 @@ clc;count = 0;
 % G = digraph(Conectivity);
 % G.Edges.Weight = Weight';
 % plot(G)
+
 set(0,'DefaultFigureWindowStyle','normal')
 %% Trajectory Generation - Motion between Waypoints - In jnt coordinates
 % A function of some polynomial trajectory scheme and a search algorithm
@@ -387,10 +421,10 @@ hrz = rest;
 [TrjObj,TT] = jnttrjgn(PathObj,hrz);
 TT.Properties.VariableUnits = {'rads','rads/sec','rads/(sec^2)'};
 writetimetable(TT,'Trajectory.csv','Delimiter','bar');
-
-pause
+stackedplot(TT); grid on;
 
 % vizualisation
+figure(1)
 for ii = 1:length(TrjObj.tvct)
     config = TrjObj.Jnt.jnt(:,ii);
     show(GP7,config);
