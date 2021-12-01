@@ -47,12 +47,16 @@ def main():
     traj_plan_file_name = "trajectory.csv"
     traj_plan_file_path = open(os.path.join(cwd,traj_plan_file_name))
 
-    joint_array = np.genfromtxt(traj_plan_file_path, delimiter=",")
-    rospy.loginfo("Imported Array of Shape: " + str(np.shape(joint_array)))
+    imported_array = np.genfromtxt(traj_plan_file_path, delimiter="|")
+    traj_array = imported_array[1:,:]
+    traj_array[:,0] = traj_array[:,0][:-4]
+    rospy.loginfo("Imported Array of Shape: " + str(np.shape(traj_array)))
+
+    print(traj_array[0:5,0])
 
     # Loop through Trajectory Plan
     # Note: velocities should be all 0 for the first and last trajectory point
-    for i, row in enumerate(joint_array):
+    for i, row in enumerate(traj_array):
         rowx = np.ndarray.tolist(row)
         # rowx = [0 if x != x else x for x in rowx]
 
