@@ -29,7 +29,7 @@ njnt = size([PathObj.Segment(1).Start],1);
                 tf = tf + 0.1;
             end
 
-        figure(80+ii)
+        figure(81)
         subplot(3,1,1)
         plot(s.T,s.s(1,:),'r*',s.T,s.s(2,:),'b*',s.T,s.s(3,:),'g*',s.T,s.s(4,:),'r-',s.T,s.s(5,:),'b-',s.T,s.s(6,:),'g-')
         legend('q1','q2','q3','q4','q5','q6')
@@ -64,7 +64,7 @@ njnt = size([PathObj.Segment(1).Start],1);
 
         end
 
-        figure(80+njnt)
+        figure(82)
         subplot(3,1,1)
         plot(PathObj.tvct,PathObj.Jnt.jnt(1,:),'r-',...
              PathObj.tvct,PathObj.Jnt.jnt(2,:),'b-',...

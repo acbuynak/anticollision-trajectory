@@ -21,7 +21,7 @@ P_E = sym('PE_', [3,1], 'real');                                            % De
 EE = sym([R_E,P_E;[0,0,0,1]]);                                              % Desired End Effector Transformation
 
 % Ressolution, in radians, of the joint limits for sampling
-resj = 15;                                                                  % Resolution of the sampling grids in joint space in degrees
+resj = 25;                                                                  % Resolution of the sampling grids in joint space in degrees
 resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
 rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
 
@@ -66,7 +66,7 @@ SwivelBase.qc = sym('rcom1',[3,1],'real');                                  % Ve
 SwivelBase.qf = sym([ sym('40.0'), 0, sym('330.0')]');                      % Location of the output frame wrt joint base frame
 SwivelBase.Rc = sym('Rcom1',[3,3],'real');                                  % Rotation from the joint base frame to COM frame
 SwivelBase.Rf = sym('Rf1',[3,3],'real');                                    % Rotation from the joint base frame to output frame
-SwivelBase.lmts = linspace(-170,170,resj)*(pi/180);                            % Joint Limits [min,max]
+SwivelBase.lmts = linspace(-170,170,resj)*(pi/180);                         % Joint Limits [min,max]
 % Brings in the STL information as arrays
 [F, V, C] = ftread('robot_support\motoman_gp7_support\meshes\VertexFiles\gp7_s_axis.stl.stl'); 
 SwivelBase.F = F; SwivelBase.V = sym(round(V,4)); SwivelBase.C = C;         % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
@@ -179,10 +179,10 @@ end
 
     A = ((Jb)*(transpose(Jb))); Av = (Js(4:6,:))*transpose(Js(4:6,:)); Aw = (Js(1:3,:))*transpose(Js(1:3,:));
 
-for ii = 1:3
-    Av(:,ii) = simplify(Av(:,ii));    
-    Aw(:,ii) = simplify(Aw(:,ii));
-end
+% for ii = 1:3
+%     Av(:,ii) = simplify(Av(:,ii));    
+%     Aw(:,ii) = simplify(Aw(:,ii));
+% end
 
 Af = symfun(A,q'); Avf = symfun(Av,q'); Awf = symfun(Aw,q');
 Tbef = symfun(Tbe,(q')); Tf = symfun(Tbe(1:3,4),(q'));
@@ -208,8 +208,8 @@ Tbef = symfun(Tbe,(q')); Tf = symfun(Tbe(1:3,4),(q'));
 % patch('Faces', jnt(6).F, 'Vertices', eval(jnt(6).V), 'FaceVertexCData', (1:size(jnt(6).F,1))', 'FaceColor', 'flat');
 % grid on
 
-clear pi xb yb zb ii jnt
-clear SwivelBase LowerArm UpperArm ArmRoll WristBend ToolFlange
+clear pi xb yb zb ii jnt SwivelBase LowerArm UpperArm ArmRoll WristBend ToolFlange
+
 clc
 
 disp('Done Section 1')
@@ -230,27 +230,24 @@ Ob1(x,y,z) = piecewise(  0 < x & x < 1 &...
 Ob2(x,y,z) = piecewise(0 < x & x < 2 &...
                       -1 < y & y < 1 &...
                        0 < z & z < 2,9,0);
-Obt = Floor+Ob1+Ob2;
+Obt = Ob1+Ob2;
 
 % View Obstacle potential fileds
 
-figure(4)
-fimplicit3(Obt,LIMS,"MeshDensity",35);
-axis(LIMS)
-xlabel('X');ylabel('Y');zlabel('Z');
-title('Obstacle Potential Field')
-grid on
-pause(0.5)
+% figure(4) % Trust me this is a waste of memory
+% fimplicit3(Obt,LIMS,"MeshDensity",30);
+% axis(LIMS)
+% xlabel('X');ylabel('Y');zlabel('Z');
+% title('Obstacle Potential Field')
+% grid on
+% pause(0.5)
 set(0,'DefaultFigureWindowStyle','normal')
 % Do Forward Kinematics and get weights
 set(0,'DefaultFigureWindowStyle','docked')
 clc
-n1 = numel(robot.Jnts(1).lmts);
-n2 = numel(robot.Jnts(2).lmts);
-n3 = numel(robot.Jnts(3).lmts);
-n4 = numel(robot.Jnts(4).lmts);
-n5 = numel(robot.Jnts(5).lmts);
-n6 = numel(robot.Jnts(6).lmts);
+n1 = numel(robot.Jnts(1).lmts);n2 = numel(robot.Jnts(2).lmts);
+n3 = numel(robot.Jnts(3).lmts);n4 = numel(robot.Jnts(4).lmts);
+n5 = numel(robot.Jnts(5).lmts);n6 = numel(robot.Jnts(6).lmts);
 
 jPspace = nan(n1,n2,n3);
 
@@ -286,67 +283,83 @@ pause(0.5)
 %     end
 % end
 
-Jntstrt = sym([ j1(2)   ,  j2(2)   ,   j3(2)  , 0 , 0 , 0]);
-Jntgoal = sym([j1(end-2), j2(end-2), j3(end-2), 0 , 0 , 0]);
+ii = 3;                                                                     % Define how close to the edges of the joint ranges you want to do the motion
+Jntstrt = sym([ j1(ii)   ,  j2(ii)   ,   j3(ii)  , 0 , 0 , 0]);
+Jntgoal = sym([j1(end-ii), j2(end-ii), j3(end-ii), 0 , 0 , 0]);
 XYZstart = Tf(Jntstrt(1),Jntstrt(2),Jntstrt(3),Jntstrt(4),Jntstrt(5),Jntstrt(6));
 XYZgoal = Tf(Jntgoal(1),Jntgoal(2),Jntgoal(3),Jntgoal(4),Jntgoal(5),Jntgoal(6));
 
 C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 
 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);                           % Is the point at an obstacle or not
-% Normalize Po
+Pf = (1/2)*((1/C{3,1})./1000).^2;                                           % Force Pushing away from the floor                       
+Pd = (1/2)*(((XYZgoal(1) - C{1,1})./1000).^2 +...                           
+            ((XYZgoal(2) - C{2,1})./1000).^2 + ...                          % Weight of the distance to the goal configuration, further out more potential
+            ((XYZgoal(3) - C{3,1})./1000).^2);                                    
+
+disp('half way Pt')
+% Normalize Po, Pf and Pd so they can be added up with weights later
 minPo = min(Po(:));maxPo = max(Po(:));
 Po = (Po - minPo)./(maxPo - minPo);
-
-Pd = ((XYZgoal(1) - C{1,1}).^2 + (XYZgoal(2) - C{2,1}).^2 + ...             % Weight of the distance to the goal configuration
-     (XYZgoal(3) - C{3,1}).^2)./1000000;                                    % the 1 million comes from taking a division of 1000 from inside the square, 1000*1000 = 1000000
-% Normalize Pd
+minPf = min(Pf(:));maxPf = max(Pf(:));
+Pf = (Pf - minPf)./(maxPf - minPf);
 minPd = min(Pd(:));maxPd = max(Pd(:));
 Pd = (Pd - minPo)./(maxPd - minPd);
 
-% Superimpose both potential fields
-Pt = double(Po + Pd);
+% Superimpose all potential fields 
+disp('almost there Pt')
+cnto = 1; cntd = 1; cntf = 1;                                               % select the weights to assign each potential field
+Pt = double(cnt*Po + cntd*Pd + cntf*Pf);
 
-[Pj1,Pj2,Pj3] = gradient(Pt);
+% Get the gradient of each potential field, for the cale of generating a
+% vizual
+[Po1,Po2,Po3] = gradient(Po);
+[Pf1,Pf2,Pf3] = gradient(Pf);
+[Pd1,Pd2,Pd3] = gradient(Pd);
+[Pt1,Pt2,Pt3] = gradient(Pt);
 clc
-disp('done with Pt')
+disp('done with Potential fields')
 pause(0.5)
-check = [sum(isinf(Pj1(:)));sum(isinf(Pj2(:)));
-sum(isinf(Pj3(:)));sum(isnan(Pj1(:)));
-sum(isnan(Pj2(:)));sum(isnan(Pj3(:)))];
+check = [sum(isinf(Pt1(:)));sum(isinf(Pt2(:)));
+sum(isinf(Pt3(:)));sum(isnan(Pt1(:)));
+sum(isnan(Pt2(:)));sum(isnan(Pt3(:)))];
 
 set(0,'DefaultFigureWindowStyle','docked')
-figure(1)
+
+figure(5) = figure(1);
 hold on;
 scatter3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,2,Pt(:));colorbar;
 xlabel('X');ylabel('Y');zlabel('Z');
-quiver3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,Pj1(:),Pj2(:),Pj3(:))
+quiver3(C{1,1}(:)./1000,C{2,1}(:)./1000,C{3,1}(:)./1000,Pt1(:),Pt2(:),Pt3(:))
 hold off
 figure(6)
 scatter3(j1g(:),j2g(:),j3g(:),2,Pt(:));colorbar
 hold on
-quiver3(j1g(:),j2g(:),j3g(:),Pj1(:),Pj2(:),Pj3(:))
+quiver3(j1g(:),j2g(:),j3g(:),Pt1(:),Pt2(:),Pt3(:))
 xlabel('Joint 1');ylabel('Joint 2');zlabel('Joint 3');
 set(0,'DefaultFigureWindowStyle','normal')
 clc
+%%
+clc
 Gama.toll = 1e-3;
-Gama.gama = .01;
+Gama.gama = 1;
 Pfield = Pt;
 coordaxes = struct('dir',[]);
-coordaxes(1).dir = j1;
-coordaxes(2).dir = j2;
-coordaxes(3).dir = j3;
-
-jseq = gradDscnt(Start,End,Pfield,coordaxes,Gama);
+coordaxes(1).dir = j1; coordaxes(2).dir = j2; coordaxes(3).dir = j3;
+Startj = Jntstrt; Startc = XYZstart;
+Endj = Jntgoal; Endc = XYZgoal;
+jseq = gradDscnt(Startj,Endj,Startc,Endc,Pfield,coordaxes,Gama,Tf);
 XYZ = zeros(3,length(jseq));
 for ii = 1:length(jseq)
     XYZ(:,ii) = double(Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
 end
 
-figure(1)
-hold on
+figure(7)
+show(GP7); hold on
 scatter3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
 plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
+
+hold off
 
 
 %%% Figure
@@ -393,30 +406,26 @@ path = path_gen;segment1 = sgmnt_gen;segment2 = sgmnt_gen;
 % Pick a joint configuration just to test - this ideally comes from the
 % waypoints
 
-QtstA = sym([   0 ,  0 ,   0 ,  0 ,  0 ,   0 ]);
-QtstB = sym([ pi/2,pi/2, pi/2,pi/2,pi/2, pi/2]);
-QtstC = sym([-pi/2, pi ,-pi/2,pi/2,pi  ,-pi/2]);
+Qtst1 = jseq(:,1);
+Qtst2 = jseq(:,2);
+Qtst3 = jseq(:,3);
+Qtst4 = jseq(:,4);
+Qtst5 = jseq(:,5);
+Qtst6 = jseq(:,6);
+Qtst7 = jseq(:,7);
+Qtst8 = jseq(:,8);
+Vwmax = 0.5  ;Awmax = 0.5;
 
-% Update the segment #
-Ap = Tbef(QtstA(1),QtstA(2),QtstA(3),QtstA(4),QtstA(5),QtstA(6));
-Vwmax1 = 1  ;Awmax1 = 0.5;
-Bp = Tbef(QtstB(1),QtstB(2),QtstB(3),QtstB(4),QtstB(5),QtstB(6));
-Vwmax2 = 0.5;Awmax2 = 1;
-Cp = Tbef(QtstC(1),QtstC(2),QtstC(3),QtstC(4),QtstC(5),QtstC(6));
+PathObj.Segment = [];
+for ii = 1:length(jseq)-1
+    sgmnt_gen.Start = jseq(:,ii);
+    sgmnt_gen.End =  jseq(:,ii+1);
+    sgmnt_gen.Vwmax = Vwmax;
+    sgmnt_gen.Awmax = Awmax;
+    PathObj.Segment = [PathObj.Segment,sgmnt_gen];
 
-segment1.Start = QtstA';
-segment1.End = QtstB';
-segment1.Vwmax= Vwmax1;
-segment1.Awmax= Awmax1;
+end
 
-segment2.Start = QtstB';
-segment2.End = QtstC';
-segment2.Vwmax= Vwmax2;
-segment2.Awmax= Awmax2;
-
-% A path is a sequence of segments
-
-PathObj.Segment = [segment1,segment2,[],[]];
 
 % Create the trajectory, mified from original code to not need frdw/inv
 % kinematics
@@ -429,11 +438,16 @@ writetimetable(TT,'Trajectory.csv','Delimiter','bar');
 stackedplot(TT); grid on;
 
 % vizualisation
-figure(1)
+r = rateControl(120);
+figure(9)
+show(GP7,double(jseq(:,1)))
+
+scatter()
+pause
 for ii = 1:length(TrjObj.tvct)
     config = TrjObj.Jnt.jnt(:,ii);
-    show(GP7,config);
-    pause(1/rest)
+    show(GP7,config);title(ii)
+    waitfor(r);
 end
 
 clear ii
