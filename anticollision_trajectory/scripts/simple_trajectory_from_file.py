@@ -44,10 +44,11 @@ def main():
 
     # Load Trajectory Plan (list of joints)
     cwd = os.path.dirname(os.path.realpath(__file__))
-    traj_plan_file_name = "trajectory.csv"
+    traj_plan_file_name = "trajectory_example.csv"
     traj_plan_file_path = os.path.join(cwd,traj_plan_file_name)
 
     traj_array = np.zeros((1,19))
+    traj_array[0,0] = 2.0
     with open(traj_plan_file_path) as csvfile:
         reader = csv.reader(csvfile, delimiter='|')
         next(reader, None) # skip header
@@ -58,6 +59,7 @@ def main():
             temp_row[0,1:] = row[1:]
             traj_array = np.vstack((traj_array, temp_row))
 
+    print(traj_array)
 
     # Loop through Trajectory Plan
     # Note: velocities should be all 0 for the first and last trajectory point
@@ -74,6 +76,8 @@ def main():
         rospy.logdebug("Added Waypoint #%s.  Waypoint: %s", i, rowx)
     
     # Send Plan
+    traj_plan.send_trajectory()
+    time.sleep(1)
     traj_plan.send_trajectory()
 
 

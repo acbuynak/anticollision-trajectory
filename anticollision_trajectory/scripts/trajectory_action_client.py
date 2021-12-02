@@ -99,5 +99,7 @@ class SimpleTrajectoryActionClient():
         self.client.wait_for_result()
         rospy.loginfo('Done.')
 
+        return True
+
 
 
