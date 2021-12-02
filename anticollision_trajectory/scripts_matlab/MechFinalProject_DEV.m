@@ -97,7 +97,7 @@ XYZ_goal = simplify(XYZ_EE(Jntgoal(1),Jntgoal(2),Jntgoal(3),...
                            Jntgoal(4),Jntgoal(5),Jntgoal(6))./1000);
 disp('Potential functions')
 % Potential Fucntions of not obstacle concerns
-rho = sym('1'); K = sym('1');                                               % Constants to controll the growth of the  potential field
+rho = sym('1'); K = sym('2');                                               % Constants to controll the growth of the  potential field
 Pg = ( rho .* cdist(XYZ_goal , [Xc;Yc;Zc]).^(2*K) );                        % Potential to the goal
 Pgf = symfun(Pg,[Xc,Yc,Zc]); 
 sig= sym('1/2');sft = sym('1/1000');                                          % Constants to controll the growth of the  potential field
@@ -114,14 +114,26 @@ gPt = gradient(Pt);
 gPtf = gradient(Ptf);
 
 % Insert the forward kineamtics equations into the cartesian potential fields
-jnt2crt_Pg_EE = Pgf(Pbe(1),Pbe(2),Pbe(3));
-jnt2crt_Pf_EE = Pff(Pbe(1),Pbe(2),Pbe(3));
-jnt2crt_Pf_jnt1b = Pff(robot.Jnts(1).Tb(1,4),robot.Jnts(1).Tb(2,4),robot.Jnts(1).Tb(3,4));
-jnt2crt_Pf_jnt2b = Pff(robot.Jnts(2).Tb(1,4),robot.Jnts(2).Tb(2,4),robot.Jnts(2).Tb(3,4));
-jnt2crt_Pf_jnt3b = Pff(robot.Jnts(3).Tb(1,4),robot.Jnts(3).Tb(2,4),robot.Jnts(3).Tb(3,4));
-jnt2crt_Pf_jnt4b = Pff(robot.Jnts(4).Tb(1,4),robot.Jnts(4).Tb(2,4),robot.Jnts(4).Tb(3,4));
-jnt2crt_Pf_jnt5b = Pff(robot.Jnts(5).Tb(1,4),robot.Jnts(5).Tb(2,4),robot.Jnts(5).Tb(3,4));
-jnt2crt_Pf_jnt6b = Pff(robot.Jnts(6).Tb(1,4),robot.Jnts(6).Tb(2,4),robot.Jnts(6).Tb(3,4));
+jnt2crt_Pg_EE = Pgf(Pbe(1)/1000,Pbe(2)/1000,Pbe(3)/1000);
+jnt2crt_Pf_EE = Pff(Pbe(1)/1000,Pbe(2)/1000,Pbe(3)/1000);
+jnt2crt_Pf_jnt1b = Pff(robot.Jnts(1).Tb(1,4)/1000,...
+                       robot.Jnts(1).Tb(2,4)/1000,...
+                       robot.Jnts(1).Tb(3,4)/1000);
+jnt2crt_Pf_jnt2b = Pff(robot.Jnts(2).Tb(1,4)/1000,...
+                       robot.Jnts(2).Tb(2,4)/1000,...
+                       robot.Jnts(2).Tb(3,4)/1000);
+jnt2crt_Pf_jnt3b = Pff(robot.Jnts(3).Tb(1,4)/1000,...
+                       robot.Jnts(3).Tb(2,4)/1000,...
+                       robot.Jnts(3).Tb(3,4)/1000);
+jnt2crt_Pf_jnt4b = Pff(robot.Jnts(4).Tb(1,4)/1000,...
+                       robot.Jnts(4).Tb(2,4)/1000,...
+                       robot.Jnts(4).Tb(3,4)/1000);
+jnt2crt_Pf_jnt5b = Pff(robot.Jnts(5).Tb(1,4)/1000,...
+                       robot.Jnts(5).Tb(2,4)/1000,...
+                       robot.Jnts(5).Tb(3,4)/1000);
+jnt2crt_Pf_jnt6b = Pff(robot.Jnts(6).Tb(1,4)/1000,...
+                       robot.Jnts(6).Tb(2,4)/1000,...
+                       robot.Jnts(6).Tb(3,4)/1000);
 jnt2crt_Pf_jntb = jnt2crt_Pf_jnt1b + jnt2crt_Pf_jnt2b + jnt2crt_Pf_jnt3b + jnt2crt_Pf_jnt4b + jnt2crt_Pf_jnt5b + jnt2crt_Pf_jnt6b;
 
 jnt2crt_Pt = jnt2crt_Pg_EE + jnt2crt_Pf_EE + jnt2crt_Pf_jntb;
@@ -137,30 +149,31 @@ g_jntPtf = gradient(jnt2crt_Ptf);
 
 disp('Calculating samples of potential fields')
 % % This section can be ignored if no time is to be wasted rendering a couple
-% % hundreth points
-% X = reshape(X,30,30,30);Y = reshape(Y,30,30,30);Z = reshape(Z,30,30,30);
+% % thousands points
+X = reshape(X,30,30,30);Y = reshape(Y,30,30,30);Z = reshape(Z,30,30,30);
 % 
-% cartPt = Ptf(X,Y,Z);
-% cartPtg = gPtf(X,Y,Z);
-% jntPt = jnt2crt_Ptf(j1g,j2g,j3g);
-% jntPtg = g_jntPtf(j1g,j2g,j3g);
+cartPt = Ptf(X,Y,Z);
+cartPtg = gPtf(X,Y,Z);
+jntPt = jnt2crt_Ptf(j1g,j2g,j3g);
+jntPtg = g_jntPtf(j1g,j2g,j3g);
 disp('Done with that')
 disp('Plotting it')
 disp('Ploting Potential fields')
-% figure
-% scatter3(X(:),Y(:),Z(:),2,cartPt(:)); hold on; colorbar;
-% figure
-% scatter3(j1g(:),j2g(:),j3g(:),2,jntPt(:)); hold on; colorbar;
-
+figure
+scatter3(X(:),Y(:),Z(:),2,cartPt(:)); hold on; colorbar;
+figure
+scatter3(j1g(:),j2g(:),j3g(:),2,jntPt(:)); hold on; colorbar;
+%
+clc
 disp('Starting Gradient Descent')
-
-Gama.toll = 1e-6;
-Gama.gama = 0.01;
+%%
+Gama.toll = 1e-3;
+Gama.gama = 1e-13;
 coordaxes = struct('dir',[]);
 coordaxes(1).dir = j1; coordaxes(2).dir = j2; coordaxes(3).dir = j3;
 Startj = Jntstrt; Startc = XYZ_start;
 Endj = Jntgoal; Endc = XYZ_goal;
-jseq = gradDscnt(Startj,Endj,Startc,Endc,g_jntPt,g_jntPtf,coordaxes,Gama,XYZ_EE);
+jseq = gradDscnt(Startj,Endj,Startc,Endc,jnt2crt_Ptf,g_jntPtf,coordaxes,Gama,XYZ_EE);
 
 disp('Finished Gradient Descent')
 XYZ = zeros(3,length(jseq));
