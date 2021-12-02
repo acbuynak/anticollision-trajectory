@@ -7,13 +7,13 @@ njnt = length(jnt);                                                         % Ge
 Tp = eye(4);                                                                % Initialize Transformation Buffer
 
 % Initilize Variable Vectors
-q = sym('q', [njnt,1],'real');                                              % Position Variables
-qd = sym('qd', [njnt,1],'real');                                            % Velocity Variables
-qdd = sym('qdd', [njnt,1],'real');                                          % Acceleration Variables
+q = sym('q', [1,njnt],'real');                                              % Position Variables
+qd = sym('qd', [1,njnt],'real');                                            % Velocity Variables
+qdd = sym('qdd', [1,njnt],'real');                                          % Acceleration Variables
 
 % Initialize some data containers depending on 
 robot = struct("Jnts",[],"Js",sym(zeros(6,njnt)),"Jb",sym(zeros(6,njnt)),"T",[]);   
-temp = struct([]);
+temp = jnt;
 Js = sym(zeros(6,njnt));                                                    % Initialize the Jacobian
 
 % Takes a joint series as a structure containing (I Inputs and gives O
@@ -23,7 +23,6 @@ Js = sym(zeros(6,njnt));                                                    % In
 % 'S',[O],'Vs',[O],'sS',[O],'esS',[O],'Tp',[O],'Tf',[O],'Tcm',[O],'Vb',[O],'Gb',[O]);
 
     for ii = 1:njnt
-%         count = 1;
         if isinf(jnt(ii).h) % Checks if this is a prismatic joint and creates the angular and linear twist of the axis depending on this
              w = sym([0,0,0]');
              v = sym([jnt(ii).s(1); ...
@@ -38,11 +37,11 @@ Js = sym(zeros(6,njnt));                                                    % In
         end
 
         temp(ii).S = [w;v];                                                 % Creates the screw axis in space frame
-        temp(ii).Sv = temp(ii).S*q(ii,1);                                   % Creates the screw axis in space frame with the variable
-        temp(ii).Vs = temp(ii).S*qd(ii,1);                                  % Creates the screw axis in space frame with the variable
+        temp(ii).Sv = temp(ii).S*q(ii);                                   % Creates the screw axis in space frame with the variable
+        temp(ii).Vs = temp(ii).S*qd(ii);                                  % Creates the screw axis in space frame with the variable
         temp(ii).sS = screw2skew(temp(ii).Sv);                              % Represents the screw axis in skew symetric form
         temp(ii).esS = expm(temp(ii).sS);                                   % Takes the matrix exponential of the skew symetric screw axis 
-        Tp = collect(Tp*temp(ii).esS,[sin(q)',cos(q)']);                                     % Collects the value of the exponential for future use across all joints
+        Tp = collect(Tp*temp(ii).esS,[sin(q)',cos(q)']);                    % Collects the value of the exponential for future use across all joints
         temp(ii).Tp = subs((Tp),{'-1.0','1.0','-0.5','0.5'},{-1,1,-0.5,0.5});                                                   % Stores the previous value for this joint
         temp(ii).Tb = (Tp * [eye(3),[jnt(ii).qb(1);
                                      jnt(ii).qb(2);
@@ -88,7 +87,7 @@ Js = sym(zeros(6,njnt));                                                    % In
     robot.Js = collect(subs((Js),{'-1.0','1.0','-0.5','0.5'},{-1,1,-0.5,0.5}),[sin(q)',cos(q)']);                                                          % Store the Space Jacobian
     robot.Jb = collect(subs((Adjoint(robot.T.eb)*Js),{'-1.0','1.0','-0.5','0.5'},{-1,1,-0.5,0.5}),[sin(q)',cos(q)']);                         % Calculate and store the Body Jacobian
     % Calcualte EE twist in space and body frame
-    robot.Vs = robot.Js*qd; robot.Vb = robot.Jb*qd;
+    robot.Vs = robot.Js*qd'; robot.Vb = robot.Jb*qd';
 end
 
 

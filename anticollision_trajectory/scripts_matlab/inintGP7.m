@@ -6,7 +6,6 @@
 % rest = 50;                                                                % Resolution of the sampling grids in time space in hrz
 
 function inintGP7(resj,resc,rest)
-    clear;clc;
     set(0,'DefaultFigureWindowStyle','docked')
     pi = sym('pi');                                                         % Numeric variables
     syms Xc Yc Zc real                                                      % Computational Variables
@@ -14,25 +13,15 @@ function inintGP7(resj,resc,rest)
     P_E = sym('PE_', [3,1], 'real');                                        % Desired End Effector Position
     EE = sym([R_E,P_E;[0,0,0,1]]);                                          % Desired End Effector Transformation
     
-    % Ressolution for sampling
-    resj = 30;                                                              % Resolution of the sampling grids in joint space in degrees
-    resc = 0.5;                                                             % Resolution of the sampling grids in cartesian space in distance units
-    rest = 50;                                                              % Resolution of the sampling grids in time space in hrz
-    
     % Robot URDF Import
     GP7 = importrobot('motoman_gp7_support/urdf/gp7.urdf');
     GP7.DataFormat = 'row';
-    %figure(1)
-    %show(GP7);
-    % figure(2)
-    % viz = interactiveRigidBodyTree(GP7);
     
     % Forward Kinematics of Desired Robot - Define diferent characteristics
     % of the robot in Product Of Exponential convention w.r.t the baseframe
     % of the robot, unless specificed are w.r.t the robot's base, some
     % values, like those relevant to the center of mass, or sensors nodes,
     % are defined w.r.t. the joint's base frame
-    
     % Base Frame X Y Z Directions
     xb = ([sym('1.0'),0,0]');
     yb = ([0,sym('1.0'),0]'); 
@@ -62,93 +51,97 @@ function inintGP7(resj,resc,rest)
     SwivelBase.lmts = linspace(-170,170,resj)*(pi/180);                     % Joint Limits [min,max]
     % Brings in the STL information as arrays
     [F, V, C] = ftread('gp7_s_axis.stl.stl'); 
-    SwivelBase.F = F; SwivelBase.V = sym(round(V,4)); SwivelBase.C = C;         % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
+    SwivelBase.F = F; SwivelBase.V = sym(round(V,4)); SwivelBase.C = C;     % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
     
     % Joint 2 - Lower Arm
-    LowerArm.s = yb;                                                            % Screw Axis direction in C axis
-    LowerArm.h = 0;                                                             % Pitch of joint
-    LowerArm.m = sym('m2','real');                                              % Total mass of the link
-    LowerArm.I = sym('I2',[3,1],'real');                                        % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
-    LowerArm.qb = ([ sym('40.0'), 0, sym('330.0')]');                           % Location the joint wrt. the base frame
-    LowerArm.qc = sym('rcom2',[3,1],'real');                                    % Vector from joint to COM in jnt base frame
-    LowerArm.qf = ([ sym('40.0'), 0, sym('715.0')]');                           % Location of the output frame wrt joint base frame
-    LowerArm.Rc = sym('Rcom2',[3,3],'real');                                    % Rotation from the joint base frame to COM frame
-    LowerArm.Rf = sym('Rf2',[3,3],'real');                                      % Rotation from the joint base frame to output frame
-    LowerArm.lmts = linspace(-65,145,resj)*(pi/180);                            % Joint Limits [min,max]
+    LowerArm.s = yb;                                                        % Screw Axis direction in C axis
+    LowerArm.h = 0;                                                         % Pitch of joint
+    LowerArm.m = sym('m2','real');                                          % Total mass of the link
+    LowerArm.I = sym('I2',[3,1],'real');                                    % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
+    LowerArm.qb = ([ sym('40.0'), 0, sym('330.0')]');                       % Location the joint wrt. the base frame
+    LowerArm.qc = sym('rcom2',[3,1],'real');                                % Vector from joint to COM in jnt base frame
+    LowerArm.qf = ([ sym('40.0'), 0, sym('715.0')]');                       % Location of the output frame wrt joint base frame
+    LowerArm.Rc = sym('Rcom2',[3,3],'real');                                % Rotation from the joint base frame to COM frame
+    LowerArm.Rf = sym('Rf2',[3,3],'real');                                  % Rotation from the joint base frame to output frame
+    LowerArm.lmts = linspace(-65,145,resj)*(pi/180);                        % Joint Limits [min,max]
     % Brings in the STL information as arrays
     [F, V, C] = ftread('gp7_l_axis.stl.stl');    
-    LowerArm.F = F; LowerArm.V = sym(round(V,4)); LowerArm.C = C;               % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
+    LowerArm.F = F; LowerArm.V = sym(round(V,4)); LowerArm.C = C;           % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
     
     % Joint 3 - Upper Arm
-    UpperArm.s = -yb;                                                           % Screw Axis direction in base frame
-    UpperArm.h = 0;                                                             % Pitch of joint
-    UpperArm.m = sym('m3','real');                                              % Total mass of the link
-    UpperArm.I = sym('I3',[3,1],'real');                                        % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
-    UpperArm.qb = ([ sym('40.0'), 0, sym('715.0')]');                           % Location the joint wrt. the base frame
-    UpperArm.qc = sym('rcom3',[3,1],'real');                                    % Vector from joint to COM in jnt base frame
-    UpperArm.qf = ([ sym('40.0'), 0, sym('715.0')]');                           % Location of the output frame wrt joint base frame
-    UpperArm.Rc = sym('Rcom3',[3,3],'real');                                    % Rotation from the joint base frame to COM frame
-    UpperArm.Rf = sym('Rf3',[3,3],'real');                                      % Rotation from the joint base frame to output frame
-    UpperArm.lmts = linspace(-70,190,resj)*(pi/180);                            % Joint Limits [min,max]
+    UpperArm.s = -yb;                                                       % Screw Axis direction in base frame
+    UpperArm.h = 0;                                                         % Pitch of joint
+    UpperArm.m = sym('m3','real');                                          % Total mass of the link
+    UpperArm.I = sym('I3',[3,1],'real');                                    % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
+    UpperArm.qb = ([ sym('40.0'), 0, sym('715.0')]');                       % Location the joint wrt. the base frame
+    UpperArm.qc = sym('rcom3',[3,1],'real');                                % Vector from joint to COM in jnt base frame
+    UpperArm.qf = ([ sym('40.0'), 0, sym('715.0')]');                       % Location of the output frame wrt joint base frame
+    UpperArm.Rc = sym('Rcom3',[3,3],'real');                                % Rotation from the joint base frame to COM frame
+    UpperArm.Rf = sym('Rf3',[3,3],'real');                                  % Rotation from the joint base frame to output frame
+    UpperArm.lmts = linspace(-70,190,resj)*(pi/180);                        % Joint Limits [min,max]
     % Brings in the STL information as arrays
     [F, V, C] = ftread('gp7_u_axis.stl.stl');    
-    UpperArm.F = F; UpperArm.V = sym(round(V,4)); UpperArm.C = C;               % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
+    UpperArm.F = F; UpperArm.V = sym(round(V,4)); UpperArm.C = C;           % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
     
     % Joint 4 - Arm Roll
-    ArmRoll.s = -xb;                                                            % Screw Axis direction in base frame
-    ArmRoll.h = 0;                                                              % Pitch of joint
-    ArmRoll.m = sym('m4','real');                                               % Total mass of the link
-    ArmRoll.I = sym('I4',[3,1],'real');                                         % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
-    ArmRoll.qb = ([ sym('40.0'), 0, sym('715.0')]');                            % Location the joint wrt. the base frame
-    ArmRoll.qc = sym('rcom4',[3,1],'real');                                     % Vector from joint to COM in jnt base frame
-    ArmRoll.qf = ([sym('380.0'), 0, sym('715.0')]');                            % Location of the output frame wrt joint base frame
-    ArmRoll.Rc = sym('Rcom4',[3,3],'real');                                     % Rotation from the joint base frame to COM frame
-    ArmRoll.Rf = sym('Rf4',[3,3],'real');                                       % Rotation from the joint base frame to output frame
-    ArmRoll.lmts = linspace(-190,190,resj)*(pi/180);                            % Joint Limits [min,max]
+    ArmRoll.s = -xb;                                                        % Screw Axis direction in base frame
+    ArmRoll.h = 0;                                                          % Pitch of joint
+    ArmRoll.m = sym('m4','real');                                           % Total mass of the link
+    ArmRoll.I = sym('I4',[3,1],'real');                                     % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
+    ArmRoll.qb = ([ sym('40.0'), 0, sym('715.0')]');                        % Location the joint wrt. the base frame
+    ArmRoll.qc = sym('rcom4',[3,1],'real');                                 % Vector from joint to COM in jnt base frame
+    ArmRoll.qf = ([sym('380.0'), 0, sym('715.0')]');                        % Location of the output frame wrt joint base frame
+    ArmRoll.Rc = sym('Rcom4',[3,3],'real');                                 % Rotation from the joint base frame to COM frame
+    ArmRoll.Rf = sym('Rf4',[3,3],'real');                                   % Rotation from the joint base frame to output frame
+    ArmRoll.lmts = linspace(-190,190,resj)*(pi/180);                        % Joint Limits [min,max]
     % Brings in the STL information as arrays
     [F, V, C] = ftread('gp7_r_axis.stl.stl');  
-    ArmRoll.F = F; ArmRoll.V = sym(round(V,4)); ArmRoll.C = C;                  % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
+    ArmRoll.F = F; ArmRoll.V = sym(round(V,4)); ArmRoll.C = C;              % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
     
     % Joint 5 - Wrist Bend
-    WristBend.s = -yb;                                                          % Screw Axis direction in base frame
-    WristBend.h = 0;                                                            % Pitch of joint
-    WristBend.m = sym('m5','real');                                             % Total mass of the link
-    WristBend.I = sym('I5',[3,1],'real');                                       % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
-    WristBend.qb = ([sym('380.0'), 0, sym('715.0')]');                          % Location the joint wrt. the base frame
-    WristBend.qc = sym('rcom5',[3,1],'real');                                   % Vector from joint to COM in jnt base frame
-    WristBend.qf = ([sym('460.0'), 0, sym('715.0')]');                          % Location of the output frame wrt joint base frame
-    WristBend.Rc = sym('Rcom5',[3,3],'real');                                   % Rotation from the joint base frame to COM frame
-    WristBend.Rf = sym('Rf5',[3,3],'real');                                     % Rotation from the joint base frame to output frame
-    WristBend.lmts = linspace(-135,135,resj)*(pi/180);                          % Joint Limits [min,max]
+    WristBend.s = -yb;                                                      % Screw Axis direction in base frame
+    WristBend.h = 0;                                                        % Pitch of joint
+    WristBend.m = sym('m5','real');                                         % Total mass of the link
+    WristBend.I = sym('I5',[3,1],'real');                                   % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
+    WristBend.qb = ([sym('380.0'), 0, sym('715.0')]');                      % Location the joint wrt. the base frame
+    WristBend.qc = sym('rcom5',[3,1],'real');                               % Vector from joint to COM in jnt base frame
+    WristBend.qf = ([sym('460.0'), 0, sym('715.0')]');                      % Location of the output frame wrt joint base frame
+    WristBend.Rc = sym('Rcom5',[3,3],'real');                               % Rotation from the joint base frame to COM frame
+    WristBend.Rf = sym('Rf5',[3,3],'real');                                 % Rotation from the joint base frame to output frame
+    WristBend.lmts = linspace(-135,135,resj)*(pi/180);                      % Joint Limits [min,max]
     % Brings in the STL information as arrays
     [F, V, C] = ftread('gp7_b_axis.stl.stl');                                   
-    WristBend.F = F; WristBend.V = sym(round(V,4)); WristBend.C = C;            % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
+    WristBend.F = F; WristBend.V = sym(round(V,4)); WristBend.C = C;        % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
     
     % Joint 6 - Tool Flange
-    ToolFlange.s = -xb;                                                         % Screw Axis direction in base frame
-    ToolFlange.h = 0;                                                           % Pitch of joint
-    ToolFlange.m = sym('m6','real');                                            % Total mass of the link
-    ToolFlange.I = sym('I6',[3,1],'real');                                      % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
-    ToolFlange.qb = ([sym('460.0'), 0, sym('715.0')]');                         % Location the joint wrt. the base frame
-    ToolFlange.qc = sym('rcom6',[3,1],'real');                                  % Vector from joint to COM in jnt base frame
-    ToolFlange.qf = ([sym('460.0'), 0, sym('715.0')]');                         % Location of the output frame wrt joint base frame
-    ToolFlange.Rc = sym('Rcom6',[3,3],'real');                                  % Rotation from the joint base frame to COM frame
-    ToolFlange.Rf = sym('Rf6',[3,3],'real');                                    % Rotation from the joint base frame to output frame
-    ToolFlange.lmts = linspace(-360,360,resj)*(pi/180);                         % Joint Limits [min,max]
+    ToolFlange.s = -xb;                                                     % Screw Axis direction in base frame
+    ToolFlange.h = 0;                                                       % Pitch of joint
+    ToolFlange.m = sym('m6','real');                                        % Total mass of the link
+    ToolFlange.I = sym('I6',[3,1],'real');                                  % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
+    ToolFlange.qb = ([sym('460.0'), 0, sym('715.0')]');                     % Location the joint wrt. the base frame
+    ToolFlange.qc = sym('rcom6',[3,1],'real');                              % Vector from joint to COM in jnt base frame
+    ToolFlange.qf = ([sym('460.0'), 0, sym('715.0')]');                     % Location of the output frame wrt joint base frame
+    ToolFlange.Rc = sym('Rcom6',[3,3],'real');                              % Rotation from the joint base frame to COM frame
+    ToolFlange.Rf = sym('Rf6',[3,3],'real');                                % Rotation from the joint base frame to output frame
+    ToolFlange.lmts = linspace(-360,360,resj)*(pi/180);                     % Joint Limits [min,max]
     % Brings in the STL information as arrays
     [F, V, C] = ftread('gp7_t_axis.stl.stl');
-    ToolFlange.F = F; ToolFlange.V = sym(round(V,4)); ToolFlange.C = C;         % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
+    ToolFlange.F = F; ToolFlange.V = sym(round(V,4)); ToolFlange.C = C;     % Preferable an array or struct of the vectors from the joint base to the vertex, currently not in use
     
     % EE frame in null configuration
-    R_M = sym([zb,yb,-xb]);                                                     % Desired End Effector Orientation
-    P_M = ([sym('460.0'), 0, sym('715.0')]');                                   % Desired End Effector Position
-    M_M =sym([R_M,P_M;[0,0,0,1]]);                                              % Composed Null Configuration EE Frame wrt base frame
+    R_M = sym([zb,yb,-xb]);                                                 % Desired End Effector Orientation
+    P_M = ([sym('460.0'), 0, sym('715.0')]');                               % Desired End Effector Position
+    M_M =sym([R_M,P_M;[0,0,0,1]]);                                          % Composed Null Configuration EE Frame wrt base frame
     
     % Define the order of the joints
-    jnt = [SwivelBase,LowerArm,UpperArm,ArmRoll,WristBend,ToolFlange,[]];       % Set the order of the joints in the robot
+    jnt = [SwivelBase,LowerArm,UpperArm,ArmRoll,WristBend,ToolFlange,[]];   % Set the order of the joints in the robot
     
     % Perform Forward Kinematics
-    [robot,q,qd,qdd] = FrwKin(jnt,M_M);
+    [robot,q,~,~] = FrwKin(jnt,M_M);
+
+    q = sym('q', size(q),'real');                                           % Position Variables
+    qd = sym('qd', size(q),'real');                                         % Velocity Variables
+    qdd = sym('qdd', size(q),'real');                                       % Acceleration Variables
     
     % Redefine some things for direct use later
     % Define the numbers that need substituting  and their numerical version,
@@ -165,6 +158,7 @@ function inintGP7(resj,resc,rest)
         Jb(:,ii) = simplify(collect(subs(Jb(:,ii),subsi,subso),[sin(q)',cos(q)']));
         robot.Jnts(ii).Tb = simplify(collect(subs(robot.Jnts(ii).Tb,subsi,subso),[sin(q)',cos(q)']));
         robot.Jnts(ii).Tcm = simplify(collect(subs(robot.Jnts(ii).Tcm,subsi,subso),[sin(q)',cos(q)']));
+        robot.Jnts(ii).Tf = simplify(collect(subs(robot.Jnts(ii).Tf,subsi,subso),[sin(q)',cos(q)']));
         robot.Jnts(ii).esS = simplify(subs(robot.Jnts(ii).esS,subsi,subso));
     end
     
@@ -172,13 +166,11 @@ function inintGP7(resj,resc,rest)
     Ab(:) = simplify(Ab(:));
     Av(:) = simplify(Av(:));    
     Aw(:) = simplify(Aw(:));
-                  
+
     SYMBS = syms;
     save('Initialization.mat','robot','Js','Jb','Tbe','Teb','resc',...
                               'resj','rest','Ab','Av','Aw','GP7','q',...
                               'qd','qdd','subsi','subso','SYMBS','Xc',...
                               'Yc','Zc')
-    clc
     disp('Done Section 1')
-
 end

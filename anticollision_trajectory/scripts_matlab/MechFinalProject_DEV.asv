@@ -10,43 +10,30 @@
 % is included in this master file
 
 %% Initialization Uncomment in needed
-clear;clc;
-resj = 30;                                                                  % Resolution of the sampling grids in joint space in degrees
-resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
-rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
-inintGP7(resj,resc,rest)
-clear; clc;
-%% Load workspace
-clear;clc;
-load('Initialization.mat')
-set(0,'DefaultFigureWindowStyle','docked')
-figure_1 = show(GP7);                                                       % Figure to show the robot's reachability
-Figure(2);subplot(1,2,1);subplot(1,2,2);figure_2 = figure(2);               % Figure used to create the manipulator potential fields
+% clear;clc;
+% resj = 30;                                                                  % Resolution of the sampling grids in joint space in degrees
+% resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
+% rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
+% inintGP7(resj,resc,rest)
+% clear; clc;
 %% Search Algorithms
 % Problem can be solved using a variety of search/optimization algorithms
 % The start of any solution begins by defining an ocupancy map in some
-% fashion, we use a potential field metholodoloy. The potential fields are
-% as follows:
-%
-%   Pg = Potential due to positioning error defined as the 2K power of the
-%   distance between the end effector and the goal. Calcualted only for the
-%   end effector. Pe = ( rho .* dist(XYZ_goal - XYZ_EE(:)).^(2*k) )
-%   
-%   Ps = Potential due to cartesian proximity to the starting position,
-%   meant to penalize returning to the initial joint configuration.
-%   Calculated only for the EE. Ps = ( sig .* (1./(XYZ_srt - XYZ_EE(:)).^(2)) )
-%   
-%   Pf = Floor potential due to the desire to not get close to the floor,
-%   floor is defined as [X = any;Y = Any; Z = some real], The smaller the
-%   difference in Z, the greater the force. Calculated for the output of a 
-%   joint. Pf = ( mu.* (1./(Z_flr - Z_EE(:))).^(2)) )
-%
-%   Po = Obstacle potential field due to proximity to the boundaries of an 
-%   obstacle, the closer the XYZ is to the boundaries of an object the
-%   higher the value is, if its inside an object its just very large.
-%   Piecesies function shown bellow
+% fashion, we use a potential field metholodoloy.
+% Load workspace
+clear;clc;
+load('Initialization.mat')
+disp('Start')
+set(0,'DefaultFigureWindowStyle','docked')
+figure_1 = show(GP7);                                                       % Figure to show the robot's reachability
+figure(2);subplot(1,2,1);subplot(1,2,2);figure_2 = figure(2);               % Figure used to create the manipulator potential fields
+set(0,'DefaultFigureWindowStyle','normal')
 
 % Define some symbolic operators from the loaded worskapce
+q = sym('q', size(q),'real');                                              % Position Variables
+qd = sym('qd', size(q),'real');                                            % Velocity Variables
+qdd = sym('qdd', size(q),'real');                                          % Acceleration Variables
+
 T_EE = symfun(Tbe,q');                                                      % EE homogeneous transformation Tbe is loaded from .m file
 Rotbe = Tbe(1:3,1:3); Rot_EE = symfun(Rotbe,q');                            % EE rotation independently
 Pbe = Tbe(1:3,4); XYZ_EE = symfun(Pbe,q');                                  % EE postion independently
@@ -61,129 +48,105 @@ j6 = subs(robot.Jnts(6).lmts,'pi',pi); n6 = numel(j6);
 
 complete_jspace_nmelmnts = n1*n2*n3*n4*n5*n6;
 
-% Define the start/end configurations in joint space
-ofst = 3;                                                                   % Ofster from the end of the jnt limits given the rest number of steps
-Jntstrt = sym([ j1(ofst)   ,  j2(ofst)   ,   j3(ofst)  , 0 , 0 , 0]);       % Start Configur
-Jntgoal = sym([j1(end-ofst), j2(end-ofst), j3(end-ofst), 0 , 0 , 0]);       % End
-% Convert these markers into cartesian space values
-XYZ_start = XYZ_EE(Jntstrt(1),Jntstrt(2),Jntstrt(3),Jntstrt(4),Jntstrt(5),Jntstrt(6));
-XYZ_goal = XYZ_EE(Jntgoal(1),Jntgoal(2),Jntgoal(3),Jntgoal(4),Jntgoal(5),Jntgoal(6));
-
-% Obstacle Potential Fields
-
-LIMS = [-3, 3, -3,3,-2,5];
-
-Floor(x,y,z) =  piecewise(z < 0,9,0);
-
-Ob1(x,y,z) = piecewise(  0 < x & x < 1 &...
-                         0 < y & y < 1 &...
-                         0 < z & z < 1,9,0);
-
-Ob2(x,y,z) = piecewise(0 < x & x < 2 &...
-                      -1 < y & y < 1 &...
-                       0 < z & z < 2,9,0);
-Obt = Ob1+Ob2;
-
-% View Obstacle potential fileds
-
-% figure(4) % Trust me this is a waste of memory
-% fimplicit3(Obt,LIMS,"MeshDensity",30);
-% axis(LIMS)
-% xlabel('X');ylabel('Y');zlabel('Z');
-% title('Obstacle Potential Field')
-% grid on
-% pause(0.5)
-set(0,'DefaultFigureWindowStyle','normal')
-% Do Forward Kinematics and get weights
-set(0,'DefaultFigureWindowStyle','docked')
-clc
-n1 = numel(robot.Jnts(1).lmts);n2 = numel(robot.Jnts(2).lmts);
-n3 = numel(robot.Jnts(3).lmts);n4 = numel(robot.Jnts(4).lmts);
-n5 = numel(robot.Jnts(5).lmts);n6 = numel(robot.Jnts(6).lmts);
-
-jPspace = nan(n1,n2,n3);
-
-nj = numel(jPspace);
-
-j1 = subs(robot.Jnts(1).lmts,'pi',pi);j2 = subs(robot.Jnts(2).lmts,'pi',pi);
-j3 = subs(robot.Jnts(3).lmts,'pi',pi);j4 = subs(robot.Jnts(4).lmts,'pi',pi);
-j5 = subs(robot.Jnts(5).lmts,'pi',pi);j6 = subs(robot.Jnts(6).lmts,'pi',pi);
-
 [j1g,j2g,j3g] = ndgrid(j1,j2,j3);
-
-disp([n1,n2,n3,n4,n5,n6,nj]);
-disp('ready for Pt')
-
-% This step takes a bit to process but its actually really good all things
-% considered, only tought for 4 joints
-% [j1g,j2g,j3g,j5g] = ndgrid(j1,j2,j3,j5);
-% jspace = nan(n1,n2,n3,n5);
-% Xgoal = 0; Ygoal = 0; Zgoal = 0;
-% Pt = nan(n1,n2,n3,n5);
-% parfor ii = 1:n1
-%     for jj = 1:n2
-%         for kk = 1:n3
-%             for ll = 1:n5
-%                 C = Tf(j1(ii),j2(jj),j3(kk),0,j5(ll),0);
-%                 Po = Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000);
-%                 Pd = (Xgoal - C{1,1}./1000).^2  +  (Ygoal - C{2,1}./1000).^2  +...  
-%                      (Zgoal - C{3,1}./1000).^2 ;
-%                 Pt(ii,jj,kk,ll) = double(Po + Pd)
-%             end
-%         end
-%     end
-% end
-
-ii = 3;                                                                     % Define how close to the edges of the joint ranges you want to do the motion
-
-
-C = Tf(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
-
+j4g = zeros(size(j1g)); j5g = j4g; j6g = j4g;
+disp('Done Defining volume in J space')
+% View Dexterous workspace
+disp('View Dexterous workspace')
+XYZc = XYZ_EE(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
+X = ((XYZc{1}(:)./1000)); Y = ((XYZc{2}(:)./1000)); Z = ((XYZc{3}(:)./1000));
+figure(1)
+show(GP7)
+hold on
+scatter3(X,Y,Z,'b.')
+disp('Done Dexterous workspace')
+% The potential fields are defined as follows:
 %
-clc
-X = double(C{1,1})./1000; Y = double(C{2,1})./1000; Z = double(C{3,1})./1000;
+%   Pg = Potential due to positioning error defined as the 2K power of the
+%   distance between the end effector and the goal. Calcualted only for the
+%   end effector. Pg = ( rho .* dist(XYZ_goal , XYZ_EE(:)).^(2*k) )
+%   
+%   Ps = Potential due to cartesian proximity to the starting position,
+%   meant to penalize returning to the initial joint configuration.
+%   Calculated only for the EE. Ps = ( sig .* (1./(XYZ_srt , XYZ_EE(:)).^(2)) )
+%   
+%   Pf = Floor potential due to the desire to not get close to the floor,
+%   floor is defined as [X = any;Y = Any; Z = some real], The smaller the
+%   difference in Z, the greater the force. Calculated for the output of a 
+%   joint. Pf = ( mu.* (1./(Z_flr , Z_EE(:))).^(2)) )
 %
-disp('half way Pt1')
-Po = double(Obt(C{1,1}./1000,C{2,1}./1000,C{3,1}./1000));                   % Is the point at an obstacle or not
+%   Po = Obstacle potential field due to proximity to the boundaries of an 
+%   obstacle, the closer the XYZ is to the boundaries of an object the
+%   higher the value is, if its inside an object its just very large.
+%   Piecesies function shown bellow
+%
+%   Pa = Potential due to manipulability potential  caused due to some
+%   notion of manipulability
+%
+%
 
-k = 2;
+% Define the start/end configurations in joint space
+ofst = 10;                                                                   % Ofster from the end of the jnt limits given the rest number of steps
+Jntstrt = sym([ j1(ofst)   ,  j2(ofst)   ,   j3(ofst)  , 0 , 0 , 0]);       % Start Configuration
+Jntgoal = sym([j1(end-ofst), j2(end-ofst), j3(end-ofst), 0 , 0 , 0]);       % End Configuration
 
-Pf = double( (1/2)*((1./(C{3,1})./1000).^2) );                              % Force Pushing away from the floor                       
+% Convert these markers into cartesian space values
+XYZ_start = simplify(XYZ_EE(Jntstrt(1),Jntstrt(2),Jntstrt(3),...
+                            Jntstrt(4),Jntstrt(5),Jntstrt(6))./1000);
 
-Pd = double( (sqrt(((XYZgoal(1) - C{1,1})./1000).^2 +...                           
-                   ((XYZgoal(2) - C{2,1})./1000).^2 + ...                   % Weight of the distance to the goal configuration, further out more potential
-                   ((XYZgoal(3) - C{3,1})./1000).^2)).^(2*k) );              
+XYZ_goal = simplify(XYZ_EE(Jntgoal(1),Jntgoal(2),Jntgoal(3),...
+                           Jntgoal(4),Jntgoal(5),Jntgoal(6))./1000);
+disp('Potential functions')
+% Potential Fucntions of not obstacle concerns
+rho = sym('1'); K = sym('1');                                               % Constants to controll the growth of the  potential field
+Pg = ( rho .* cdist(XYZ_goal , [Xc;Yc;Zc]).^(2*K) );                        % Potential to the goal
+Pgf = symfun(Pg,[Xc,Yc,Zc]); 
+sig= sym('1/2');sft = sym('1/1000');                                          % Constants to controll the growth of the  potential field
+Ps = ( sig .* (1./(cdist(XYZ_start , [Xc;Yc;Zc])+sft)).^(2));               % Potential from the start
+Psf = symfun(Ps,[Xc,Yc,Zc]);
+mu = sym('1/2'); Z_flr = sym('0');                                            % Constants to controll the growth of the  potential field
+Pf = ( mu .* (1./(cdist(Z_flr , Zc)+sft)).^(2));                            % Potential from the floor
+Pff = symfun(Pf,[Xc,Yc,Zc]);
 
-disp('half way Pt2')
-% Normalize Po, Pf and Pd so they can be added up with weights later
-% minPo = min(Po(:));maxPo = max(Po(:));
-% Po = (Po - minPo)./(maxPo - minPo);
-% minPf = min(Pf(:));maxPf = max(Pf(:));
-% Pf = (Pf - minPf)./(maxPf - minPf);
-% minPd = min(Pd(:));maxPd = max(Pd(:));
-% Pd = (Pd - minPo)./(maxPd - minPd);
+cntg = 1; cnts = 1; cntf = 1;                                               % Select the weights to assign each potential field
+Pt = (cntg*Pg + cnts*Ps + cntf*Pf);
+Ptf = symfun(Pt,[Xc,Yc,Zc]);                                                % Creates a separate symbolic function      
+gPt = gradient(Pt);
+gPtf = gradient(Ptf);
 
-% Superimpose all potential fields 
-disp('almost there Pt')
-cnto = 0; cntd = 1; cntf = 1;                                               % select the weights to assign each potential field
-Pt = double(cnto*Po + cntd*Pd + cntf*Pf);
+% Insert the forward kineamtics equations into the cartesian potential fields
+jnt2crt_Pg_EE = Pgf(Pbe(1),Pbe(2),Pbe(3));
+jnt2crt_Pf_EE = Pff(Pbe(1),Pbe(2),Pbe(3));
+jnt2crt_Pf_jnt1b = Pff(robot.Jnts(1).Tb(1,4),robot.Jnts(1).Tb(2,4),robot.Jnts(1).Tb(3,4));
+jnt2crt_Pf_jnt2b = Pff(robot.Jnts(2).Tb(1,4),robot.Jnts(2).Tb(2,4),robot.Jnts(2).Tb(3,4));
+jnt2crt_Pf_jnt3b = Pff(robot.Jnts(3).Tb(1,4),robot.Jnts(3).Tb(2,4),robot.Jnts(3).Tb(3,4));
+jnt2crt_Pf_jnt4b = Pff(robot.Jnts(4).Tb(1,4),robot.Jnts(4).Tb(2,4),robot.Jnts(4).Tb(3,4));
+jnt2crt_Pf_jnt5b = Pff(robot.Jnts(5).Tb(1,4),robot.Jnts(5).Tb(2,4),robot.Jnts(5).Tb(3,4));
+jnt2crt_Pf_jnt6b = Pff(robot.Jnts(6).Tb(1,4),robot.Jnts(6).Tb(2,4),robot.Jnts(6).Tb(3,4));
+jnt2crt_Pf_jntb = jnt2crt_Pf_jnt1b + jnt2crt_Pf_jnt2b + jnt2crt_Pf_jnt3b + jnt2crt_Pf_jnt4b + jnt2crt_Pf_jnt5b + jnt2crt_Pf_jnt6b;
 
-% Get the gradient of each potential field, for the cale of generating a
-% vizual
-[Po1,Po2,Po3] = gradient(Po); 
-[Pf1,Pf2,Pf3] = gradient(Pf);
-[Pd1,Pd2,Pd3] = gradient(Pd);
-[Pt1,Pt2,Pt3] = gradient(Pt);
-clc
-disp('done with Potential fields')
-pause(0.5)
-check = sum([sum(isinf(Pt1(:)));sum(isinf(Pt2(:)));
-             sum(isinf(Pt3(:)));sum(isnan(Pt1(:)));
-             sum(isnan(Pt2(:)));sum(isnan(Pt3(:)))]);
+jnt2crt_Pt = jnt2crt_Pg_EE + jnt2crt_Pf_EE + jnt2crt_Pf_jntb;
+jnt2crt_Ptf = symfun(jnt2crt_Pt,q);
+% The previous function remains a function of all 6 joints making it hard
+% to anser the porblme under the "lock j5" assumption but the following
+% lines fix that
+jnt2crt_Pt = jnt2crt_Ptf(q(1),q(2),q(3),0,0,0);
+jnt2crt_Ptf = symfun(jnt2crt_Pt,[q(1),q(2),q(3)]);
 
-if check == 1
-    return 
-end
+g_jntPt = gradient(jnt2crt_Pt);
+g_jntPtf = gradient(jnt2crt_Ptf);
+
+X = reshape(X,30,30,30);Y = reshape(Y,30,30,30);Z = reshape(Z,30,30,30);
+disp('Calculating samples of potential fields')
+cartPt = Ptf(X,Y,Z);
+cartPtg = gPtf(X,Y,Z);
+jntPt = jnt2crt_Ptf(j1g,j2g,j3g);
+jntPtg = g_jntPtf(j1g,j2g,j3g);
+disp('Calculating samples of potential fields'
+figure
+scatter3(X(:),Y(:),Z(:),2,cartPt(:)); hold on; colorbar;
+figure
+scatter3(j1g(:),j2g(:),j3g(:),2,jntPt(:)); hold on; colorbar;
 
 set(0,'DefaultFigureWindowStyle','docked')
 
@@ -201,20 +164,19 @@ xlabel('Joint 1');ylabel('Joint 2');zlabel('Joint 3');
 set(0,'DefaultFigureWindowStyle','normal')
 hold off
 clc
-%%
+%
 clc
 Gama.toll = 1e-3;
-Gama.gama = 0.4;
-Pfield = Pt;
+Gama.gama = 0.1;
 coordaxes = struct('dir',[]);
 coordaxes(1).dir = j1; coordaxes(2).dir = j2; coordaxes(3).dir = j3;
-Startj = Jntstrt; Startc = XYZstart;
-Endj = Jntgoal; Endc = XYZgoal;
-jseq = gradDscnt(Startj,Endj,Startc,Endc,Pfield,coordaxes,Gama,Tf);
+Startj = Jntstrt; Startc = XYZ_start;
+Endj = Jntgoal; Endc = XYZ_goal;
+jseq = gradDscnt(Startj,Endj,Startc,Endc,g_jntPt,g_jntPtf,coordaxes,Gama,XYZ_EE);
 XYZ = zeros(3,length(jseq));
 
 for ii = 1:length(jseq)
-    XYZ(:,ii) = double(Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
+    XYZ(:,ii) = (Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
 end
 set(0,'DefaultFigureWindowStyle','docked')
 figure(7)
@@ -224,29 +186,6 @@ plot3(XYZ(1,:),XYZ(2,:),XYZ(3,:))
 hold off
 set(0,'DefaultFigureWindowStyle','normal')
 
-%%% Figure
-% This next figure looses meaning when seen in higher than 3 dimensions, if
-% I keep j5 in the mix its better to suppress this output
-% figure(7)
-% scatter3(j1g(:),j2g(:),j3g(:),2,P(:))
-
-clc;count = 0;
-
-%%% Adjacency Map - Written in case we wanted to use a graph search
-%%% algorithm
-% Create a matrix of n by n where every colum is a given node and its
-% corresponding rows are 1 of the node touches the nth node or 0 if it does
-% not
-% Examples: https://stackoverflow.com/questions/30465259/create-an-adjacency-matrix-matlab
-% https://stackoverflow.com/questions/3277541/construct-adjacency-matrix-in-matlab
-%
-% sz = [n1,n2,n3];
-% [ii, jj] = adjmatrix(sz, 2, inf, 1);
-% Conectivity = sparse(ii, jj, ones(1,numel(ii)), nj, nj);
-% Weight(:) = (Pt(ii)+Pt(jj));
-% G = digraph(Conectivity);
-% G.Edges.Weight = Weight';
-% plot(G)
 
 set(0,'DefaultFigureWindowStyle','normal')
 %% Trajectory Generation - Motion between Waypoints - In jnt coordinates
@@ -305,6 +244,9 @@ end
 clear ii
 
 set(0,'DefaultFigureWindowStyle','normal')
+
+
+
 %% Notes and good links
 % https://stackoverflow.com/questions/51158078/load-stl-file-in-matlab-and-convert-to-a-3d-array
 %
