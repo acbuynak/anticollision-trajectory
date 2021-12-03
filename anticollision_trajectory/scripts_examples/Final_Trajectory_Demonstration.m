@@ -53,7 +53,7 @@ hrz = rest;
 [TrjObj,TT] = jnttrjgn(PathObj,rest);
 TT.Properties.VariableUnits = {'rads','rads/sec','rads/(sec^2)'};
 disp('Wrtign CSV')
-writetimetable(TT,'Trajectory.csv','Delimiter','bar');
+writetimetable(TT,'Trajectory_Dec1221_10pm.csv','Delimiter','bar');
 disp('Plotting trajecotry')
 figure
 stackedplot(TT); grid on;
