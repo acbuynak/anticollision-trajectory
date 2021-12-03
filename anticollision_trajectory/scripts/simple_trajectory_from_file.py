@@ -48,14 +48,14 @@ def main():
     traj_plan_file_path = os.path.join(cwd,traj_plan_file_name)
 
     traj_array = np.zeros((1,19))
-    traj_array[0,0] = 2.0
+    traj_array[0,0] = 4.0
     with open(traj_plan_file_path) as csvfile:
         reader = csv.reader(csvfile, delimiter='|')
         next(reader, None) # skip header
 
         for i, row in enumerate(reader):
             temp_row = np.zeros((1,19))
-            temp_row[0,0] = float(str(row[0])[:-4])
+            temp_row[0,0] = float(str(row[0])[:-4])+5
             temp_row[0,1:] = row[1:]
             traj_array = np.vstack((traj_array, temp_row))
 
@@ -76,6 +76,7 @@ def main():
         rospy.logdebug("Added Waypoint #%s.  Waypoint: %s", i, rowx)
     
     # Send Plan
+    time.sleep(5)
     traj_plan.send_trajectory()
     time.sleep(1)
     traj_plan.send_trajectory()
