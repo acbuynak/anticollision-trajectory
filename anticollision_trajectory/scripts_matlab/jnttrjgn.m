@@ -4,7 +4,7 @@ function [PathObj,TT] = jnttrjgn(PathObj,hrz)
 % sgmnt_gen = struct('Start',[],'End',[],'Vwmax',[],'Awmax',[],'t0',[],...
 %                    'tf',[]);  
 n = length(PathObj.Segment);
-njnt = size([PathObj.Segment(1).Start],1);
+njnt = size([PathObj.Segment(1).Start],2);
 
     for ii = 1:n
 
@@ -13,10 +13,10 @@ njnt = size([PathObj.Segment(1).Start],1);
         Vmax = PathObj.Segment(ii).Vwmax;
         Amax = PathObj.Segment(ii).Awmax;
         ta = Vmax/Amax; tf = 2*ta;
-        
-        s.s = zeros(njnt,hrz*tf);
-        s.sd = (Vmax + 0.01)*ones(njnt,hrz*tf);
-        s.sdd = (Amax + 0.01)*ones(njnt,hrz*tf);
+
+        s.s = zeros(njnt,ceil(hrz*tf));
+        s.sd = (Vmax + 0.01)*ones(njnt,ceil(hrz*tf));
+        s.sdd = (Amax + 0.01)*ones(njnt,ceil(hrz*tf));
 
         s.T = [];
 

@@ -10,12 +10,12 @@
 % is included in this master file
 
 %% Initialization Uncomment in needed
-% clear;clc;
-% resj = 30;                                                                  % Resolution of the sampling grids in joint space in degrees
-% resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
-% rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
-% inintGP7(resj,resc,rest)
-% clear; clc;
+clear;clc;
+resj = 20;                                                                  % Resolution of the sampling grids in joint space in degrees
+resc = 0.5;                                                                 % Resolution of the sampling grids in cartesian space in distance units
+rest = 50;                                                                  % Resolution of the sampling grids in time space in hrz
+inintGP7(resj,resc,rest)
+clear; clc;
 %% Search Algorithms
 % Problem can be solved using a variety of search/optimization algorithms
 % The start of any solution begins by defining an ocupancy map in some
@@ -55,10 +55,12 @@ disp('View Dexterous workspace')
 XYZc = XYZ_EE(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
 X = ((XYZc{1}(:)./1000)); Y = ((XYZc{2}(:)./1000)); Z = ((XYZc{3}(:)./1000));
 figure(1)
+pause(0.5)
 show(GP7)
 hold on
 scatter3(X,Y,Z,'b.')
 disp('Done Dexterous workspace')
+pause(0.5)
 % The potential fields are defined as follows:
 %
 %   Pg = Potential due to positioning error defined as the 2K power of the
@@ -85,7 +87,7 @@ disp('Done Dexterous workspace')
 %
 
 % Define the start/end configurations in joint space
-ofst = 10;                                                                   % Ofster from the end of the jnt limits given the rest number of steps
+ofst = 5;                                                                   % Ofster from the end of the jnt limits given the rest number of steps
 Jntstrt = sym([ j1(ofst)   ,  j2(ofst)   ,   j3(ofst)  , 0 , 0 , 0]);       % Start Configuration
 Jntgoal = sym([j1(end-ofst), j2(end-ofst), j3(end-ofst), 0 , 0 , 0]);       % End Configuration
 
@@ -113,7 +115,8 @@ Ptf = symfun(Pt,[Xc,Yc,Zc]);                                                % Cr
 gPt = gradient(Pt);
 gPtf = gradient(Ptf);
 
-% Insert the forward kineamtics equations into the cartesian potential fields
+% Insert the forward kineamtics equations into the cartesian potential 
+% fields the division by 1000 are to scale eerything to the meters
 jnt2crt_Pg_EE = Pgf(Pbe(1)/1000,Pbe(2)/1000,Pbe(3)/1000);
 jnt2crt_Pf_EE = Pff(Pbe(1)/1000,Pbe(2)/1000,Pbe(3)/1000);
 jnt2crt_Pf_jnt1b = Pff(robot.Jnts(1).Tb(1,4)/1000,...
@@ -134,6 +137,7 @@ jnt2crt_Pf_jnt5b = Pff(robot.Jnts(5).Tb(1,4)/1000,...
 jnt2crt_Pf_jnt6b = Pff(robot.Jnts(6).Tb(1,4)/1000,...
                        robot.Jnts(6).Tb(2,4)/1000,...
                        robot.Jnts(6).Tb(3,4)/1000);
+
 jnt2crt_Pf_jntb = jnt2crt_Pf_jnt1b + jnt2crt_Pf_jnt2b + jnt2crt_Pf_jnt3b + jnt2crt_Pf_jnt4b + jnt2crt_Pf_jnt5b + jnt2crt_Pf_jnt6b;
 
 jnt2crt_Pt = jnt2crt_Pg_EE + jnt2crt_Pf_EE + jnt2crt_Pf_jntb;
@@ -150,23 +154,97 @@ g_jntPtf = gradient(jnt2crt_Ptf);
 disp('Calculating samples of potential fields')
 % % This section can be ignored if no time is to be wasted rendering a couple
 % % thousands points
-X = reshape(X,30,30,30);Y = reshape(Y,30,30,30);Z = reshape(Z,30,30,30);
-% 
+X = reshape(X,resj,resj,resj);
+Y = reshape(Y,resj,resj,resj);
+Z = reshape(Z,resj,resj,resj);
 cartPt = Ptf(X,Y,Z);
-cartPtg = gPtf(X,Y,Z);
-jntPt = jnt2crt_Ptf(j1g,j2g,j3g);
-jntPtg = g_jntPtf(j1g,j2g,j3g);
+cartPtg = gPtf(X,Y,Z); 
+jntPt = jnt2crt_Ptf(j1g,j2g,j3g); 
+jntPtg = g_jntPtf(j1g,j2g,j3g); 
+
+n = numel(cartPt);
+
+%%
+% c1 = cartPtg{1}(:);
+% c2 = cartPtg{2}(:);
+% c3 = cartPtg{3}(:);
+% jt1 = jntPtg{1}(:);
+% jt2 = jntPtg{2}(:);
+% jt3 = jntPtg{3}(:);
+% 
+% cartPt = nan(1,n);
+% parfor ii = 1
+%     cartPt(ii) = double(cartPt(ii));
+% end
+% jntPt = cartPt;
+% 
+% parfor ii = 1
+%     jntPt(ii) = double(jntPt(ii));
+% end
+% cartPtg1 = cartPt;
+% cartPtg2 = cartPt;
+% cartPtg3 = cartPt;
+% parfor ii = 1
+%     cartPtg1(ii) = double(c1(ii));
+%     cartPtg2(ii) = double(c2(ii));
+%     cartPtg3(ii) = double(c3(ii));
+% end
+% jntPtgt1 = cartPt;
+% jntPtgt2 = cartPt;
+% jntPtgt3 = cartPt;
+% parfor ii = 1
+%     jntPtgt1(ii) = double(jt1(ii)); 
+%     jntPtgt2(ii) = double(jt2(ii));
+%     jntPtgt3(ii) = double(jt3(ii));
+% end
+% 
+
+
+%%
+cartPt(:) = double(cartPt(:));jntPt(:) = double(jntPt(:));
+cartPtg1 = double(cartPtg{1}(:)); 
+cartPtg2 = double(cartPtg{2}(:));
+cartPtg3 = double(cartPtg{3}(:));
+jntPtgt1 = double(jntPtg{1}(:)); 
+jntPtgt2 = double(jntPtg{2}(:));
+jntPtgt3 = double(jntPtg{3}(:));
 disp('Done with that')
-disp('Plotting it')
+disp('Saving it')
+%%
+figure
+pause(0.5)
+scatter3(X(:),Y(:),Z(:),2,cartPt(:)); hold on; colorbar; hold on
+pause(0.5)
+quiver3(X(:),Y(:),Z(:),cartPtg1(:),cartPtg2(:),cartPtg3(:));
+pause(0.1)
+figure
+scatter3(j1g(:),j2g(:),j3g(:),jntPt(:)); hold on; colorbar; hold on
+pause(0.5)
+quiver3(j1g(:),j2g(:),j3g(:),jntPtgt1(:),jntPtgt2(:),jntPtgt3(:))
+pause(0.5)
+
+%save('disspace.mat','cartPt','cartPtg','jntPt','jntPtg','Ptf','gPtf','jnt2crt_Ptf','g_jntPtf')
+%clear
+%%
 disp('Ploting Potential fields')
+%load("disspace.mat")
+%load('Initialization.mat')
+
 figure
-scatter3(X(:),Y(:),Z(:),2,cartPt(:)); hold on; colorbar;
+pause(0.1)
+scatter3(X(:),Y(:),Z(:),2,cartPt(:)); hold on; colorbar; hold on
+pause(0.1)
+quiver3(X(:),Y(:),Z(:),2,cartPtg(1,:),cartPtg(2,:),cartPtg(3,:));
+pause(0.1)
 figure
-scatter3(j1g(:),j2g(:),j3g(:),2,jntPt(:)); hold on; colorbar;
+scatter3(j1g(:),j2g(:),j3g(:),2,jntPt(:)); hold on; colorbar; hold on
+pause(0.5)
+quiver3(j1g(:),j2g(:),j3g(:),2,jntPtg(1,:),jntPtg(2,:),jntPtg(3,:))
+pause(0.5)
 %
 clc
-disp('Starting Gradient Descent')
 %%
+disp('Starting Gradient Descent')
 Gama.toll = 1e-3;
 Gama.gama = 1e-13;
 coordaxes = struct('dir',[]);
@@ -218,7 +296,6 @@ for ii = 1:length(jseq)-1
     sgmnt_gen.Vwmax = Vwmax;
     sgmnt_gen.Awmax = Awmax;
     PathObj.Segment = [PathObj.Segment,sgmnt_gen];
-
 end
 
 
