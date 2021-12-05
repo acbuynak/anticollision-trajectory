@@ -23,19 +23,21 @@ clear; clc;
 % Load workspace
 clear;clc;
 load('Initialization.mat')
+% Arrange some structures
+
+syms q [1,numel(q)] real
+syms qd [1,numel(q)] real
+syms qdd [1,numel(q)] real
+
 disp('Start')
 set(0,'DefaultFigureWindowStyle','docked')
 figure_1 = show(GP7);                                                       % Figure to show the robot's reachability
 figure(2);subplot(1,2,1);subplot(1,2,2);figure_2 = figure(2);               % Figure used to create the manipulator potential fields
 
-% Define some symbolic operators from the loaded worskapce
-q = sym('q', size(q),'real');                                              % Position Variables
-qd = sym('qd', size(q),'real');                                            % Velocity Variables
-qdd = sym('qdd', size(q),'real');                                          % Acceleration Variables
-
-T_EE = symfun(Tbe,q');                                                      % EE homogeneous transformation Tbe is loaded from .m file
-Rotbe = Tbe(1:3,1:3); Rot_EE = symfun(Rotbe,q');                            % EE rotation independently
-Pbe = Tbe(1:3,4); XYZ_EE = symfun(Pbe,q');                                  % EE postion independently
+T_EE = symfun(eval(Tbe)/1000,q');                                                % EE homogeneous transformation Tbe is loaded from .m file
+Rotbe = eval(Tbe(1:3,1:3))/1000; 
+Rot_EE = symfun(Rotbe,q');                                                  % EE rotation independently
+Pbe = eval(Tbe(1:3,4))/1000; XYZ_EE = symfun(Pbe,q');                            % EE postion independently
 
 % Joint Axes - Imported and subtituting the 'pi' symbol by pi for evltn 
 j1 = subs(robot.Jnts(1).lmts,'pi',pi); n1 = numel(j1);
@@ -46,21 +48,24 @@ j5 = subs(robot.Jnts(5).lmts,'pi',pi); n5 = numel(j5);
 j6 = subs(robot.Jnts(6).lmts,'pi',pi); n6 = numel(j6);
 
 complete_jspace_nmelmnts = n1*n2*n3*n4*n5*n6;
-
 [j1g,j2g,j3g] = ndgrid(j1,j2,j3);
 j4g = zeros(size(j1g)); j5g = j4g; j6g = j4g;
 disp('Done Defining volume in J space')
 % View Dexterous workspace
 disp('View Dexterous workspace')
-XYZc = XYZ_EE(j1g,j2g,j3g,zeros(size(j1g)),zeros(size(j1g)),zeros(size(j1g)));
-X = ((XYZc{1}(:)./1000)); Y = ((XYZc{2}(:)./1000)); Z = ((XYZc{3}(:)./1000));
+XYZc = XYZ_EE(j1g,j2g,j3g,j4g,j5g,j6g);
+X = XYZc{1} ; Y = XYZc{2} ;Z = XYZc{3};
+
 figure(1)
 pause(0.5)
 show(GP7)
+figure(2)
+pause(1)
+show(GP7)
 hold on
-scatter3(X,Y,Z,'b.')
+scatter3(X(:),Y(:),Z(:),'b.')
 disp('Done Dexterous workspace')
-pause(0.5)
+
 % The potential fields are defined as follows:
 %
 %   Pg = Potential due to positioning error defined as the 2K power of the
@@ -88,24 +93,25 @@ pause(0.5)
 
 % Define the start/end configurations in joint space
 ofst = 5;                                                                   % Ofster from the end of the jnt limits given the rest number of steps
+
 Jntstrt = sym([ j1(ofst)   ,  j2(ofst)   ,   j3(ofst)  , 0 , 0 , 0]);       % Start Configuration
 Jntgoal = sym([j1(end-ofst), j2(end-ofst), j3(end-ofst), 0 , 0 , 0]);       % End Configuration
 
 % Convert these markers into cartesian space values
-XYZ_start = simplify(XYZ_EE(Jntstrt(1),Jntstrt(2),Jntstrt(3),...
-                            Jntstrt(4),Jntstrt(5),Jntstrt(6))./1000);
+XYZ_start = expand(XYZ_EE(Jntstrt(1),Jntstrt(2),Jntstrt(3),...
+                          Jntstrt(4),Jntstrt(5),Jntstrt(6)));
 
-XYZ_goal = simplify(XYZ_EE(Jntgoal(1),Jntgoal(2),Jntgoal(3),...
-                           Jntgoal(4),Jntgoal(5),Jntgoal(6))./1000);
+XYZ_goal = expand(XYZ_EE(Jntgoal(1),Jntgoal(2),Jntgoal(3),...
+                         Jntgoal(4),Jntgoal(5),Jntgoal(6)));
 disp('Potential functions')
 % Potential Fucntions of not obstacle concerns
 rho = sym('1'); K = sym('2');                                               % Constants to controll the growth of the  potential field
 Pg = ( rho .* cdist(XYZ_goal , [Xc;Yc;Zc]).^(2*K) );                        % Potential to the goal
 Pgf = symfun(Pg,[Xc,Yc,Zc]); 
-sig= sym('1/2');sft = sym('1/1000');                                          % Constants to controll the growth of the  potential field
+sig= sym('1/2');sft = sym('1/1000');                                        % Constants to controll the growth of the  potential field
 Ps = ( sig .* (1./(cdist(XYZ_start , [Xc;Yc;Zc])+sft)).^(2));               % Potential from the start
 Psf = symfun(Ps,[Xc,Yc,Zc]);
-mu = sym('1/2'); Z_flr = sym('0');                                            % Constants to controll the growth of the  potential field
+mu = sym('1/2'); Z_flr = sym('0');                                          % Constants to controll the growth of the  potential field
 Pf = ( mu .* (1./(cdist(Z_flr , Zc)+sft)).^(2));                            % Potential from the floor
 Pff = symfun(Pf,[Xc,Yc,Zc]);
 
@@ -117,26 +123,26 @@ gPtf = gradient(Ptf);
 
 % Insert the forward kineamtics equations into the cartesian potential 
 % fields the division by 1000 are to scale eerything to the meters
-jnt2crt_Pg_EE = Pgf(Pbe(1)/1000,Pbe(2)/1000,Pbe(3)/1000);
-jnt2crt_Pf_EE = Pff(Pbe(1)/1000,Pbe(2)/1000,Pbe(3)/1000);
-jnt2crt_Pf_jnt1b = Pff(robot.Jnts(1).Tb(1,4)/1000,...
-                       robot.Jnts(1).Tb(2,4)/1000,...
-                       robot.Jnts(1).Tb(3,4)/1000);
-jnt2crt_Pf_jnt2b = Pff(robot.Jnts(2).Tb(1,4)/1000,...
-                       robot.Jnts(2).Tb(2,4)/1000,...
-                       robot.Jnts(2).Tb(3,4)/1000);
-jnt2crt_Pf_jnt3b = Pff(robot.Jnts(3).Tb(1,4)/1000,...
-                       robot.Jnts(3).Tb(2,4)/1000,...
-                       robot.Jnts(3).Tb(3,4)/1000);
-jnt2crt_Pf_jnt4b = Pff(robot.Jnts(4).Tb(1,4)/1000,...
-                       robot.Jnts(4).Tb(2,4)/1000,...
-                       robot.Jnts(4).Tb(3,4)/1000);
-jnt2crt_Pf_jnt5b = Pff(robot.Jnts(5).Tb(1,4)/1000,...
-                       robot.Jnts(5).Tb(2,4)/1000,...
-                       robot.Jnts(5).Tb(3,4)/1000);
-jnt2crt_Pf_jnt6b = Pff(robot.Jnts(6).Tb(1,4)/1000,...
-                       robot.Jnts(6).Tb(2,4)/1000,...
-                       robot.Jnts(6).Tb(3,4)/1000);
+jnt2crt_Pg_EE = Pgf(Pbe(1),Pbe(2),Pbe(3));
+jnt2crt_Pf_EE = Pff(Pbe(1),Pbe(2),Pbe(3));
+jnt2crt_Pf_jnt1b = Pff(robot.Jnts(1).Tb(1,4),...
+                       robot.Jnts(1).Tb(2,4),...
+                       robot.Jnts(1).Tb(3,4));
+jnt2crt_Pf_jnt2b = Pff(robot.Jnts(2).Tb(1,4),...
+                       robot.Jnts(2).Tb(2,4),...
+                       robot.Jnts(2).Tb(3,4));
+jnt2crt_Pf_jnt3b = Pff(robot.Jnts(3).Tb(1,4),...
+                       robot.Jnts(3).Tb(2,4),...
+                       robot.Jnts(3).Tb(3,4));
+jnt2crt_Pf_jnt4b = Pff(robot.Jnts(4).Tb(1,4),...
+                       robot.Jnts(4).Tb(2,4),...
+                       robot.Jnts(4).Tb(3,4));
+jnt2crt_Pf_jnt5b = Pff(robot.Jnts(5).Tb(1,4),...
+                       robot.Jnts(5).Tb(2,4),...
+                       robot.Jnts(5).Tb(3,4));
+jnt2crt_Pf_jnt6b = Pff(robot.Jnts(6).Tb(1,4),...
+                       robot.Jnts(6).Tb(2,4),...
+                       robot.Jnts(6).Tb(3,4));
 
 jnt2crt_Pf_jntb = jnt2crt_Pf_jnt1b + jnt2crt_Pf_jnt2b + jnt2crt_Pf_jnt3b + jnt2crt_Pf_jnt4b + jnt2crt_Pf_jnt5b + jnt2crt_Pf_jnt6b;
 
@@ -257,7 +263,7 @@ disp('Finished Gradient Descent')
 XYZ = zeros(3,length(jseq));
 
 for ii = 1:length(jseq)
-    XYZ(:,ii) = (Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)))./1000;
+    XYZ(:,ii) = (Tf(jseq(1,ii),jseq(2,ii),jseq(3,ii),jseq(4,ii),jseq(5,ii),jseq(6,ii)));
 end
 
 figure(7)

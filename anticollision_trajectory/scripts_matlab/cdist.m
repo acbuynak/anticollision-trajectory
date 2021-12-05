@@ -10,7 +10,7 @@ function cdAB = cdist(A,B) % Cartesian distance starting from A ending at B
         sAB(ii) = simplify((del)^2);    
     end
     
-    sAB = simplify(sum(sAB));
+    sAB = sum(sAB);
     cdAB = (sAB)^(1/2);
 
 end

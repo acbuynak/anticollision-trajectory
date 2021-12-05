@@ -1,9 +1,9 @@
 % Generates a file.mat file that can be used to quickly load and unload
 % data without having to regenerate the complete robot architecture
 
-% resj = 30;                                                                % Resolution of the sampling grids in joint space in degrees
-% resc = 0.5;                                                               % Resolution of the sampling grids in cartesian space in distance units
-% rest = 50;                                                                % Resolution of the sampling grids in time space in hrz
+%resj = 30;                                                                % Resolution of the sampling grids in joint space in degrees
+%resc = 0.5;                                                               % Resolution of the sampling grids in cartesian space in distance units
+%rest = 50;                                                                % Resolution of the sampling grids in time space in hrz
 
 function inintGP7(resj,resc,rest)
     set(0,'DefaultFigureWindowStyle','docked')
@@ -23,9 +23,7 @@ function inintGP7(resj,resc,rest)
     % values, like those relevant to the center of mass, or sensors nodes,
     % are defined w.r.t. the joint's base frame
     % Base Frame X Y Z Directions
-    xb = ([sym('1.0'),0,0]');
-    yb = ([0,sym('1.0'),0]'); 
-    zb = ([0,0,sym('1.0')]');                 
+    xb = ([sym('1.0'),0,0]');    yb = ([0,sym('1.0'),0]');    zb = ([0,0,sym('1.0')]');                 
     
     jntg = struct('s',[],'h',[],'m',[],'I',[],'qb',[],'qc',[],'qf',[],...   % General Initialization of a Joint
                  'Rc',[],'Rf',[],'nSens',[],...
@@ -139,17 +137,15 @@ function inintGP7(resj,resc,rest)
     % Perform Forward Kinematics
     [robot,q,~,~] = FrwKin(jnt,M_M);
 
-    q = sym('q', size(q),'real');                                           % Position Variables
-    qd = sym('qd', size(q),'real');                                         % Velocity Variables
-    qdd = sym('qdd', size(q),'real');                                       % Acceleration Variables
-    
     % Redefine some things for direct use later
     % Define the numbers that need substituting  and their numerical version,
     % idk if vpa is bettee but i like this way
     % inputs
-    subsi = {'80.0','-80.0','340.0','-340.0','40.0','-40.0','385.0','-385.0','340.0','-340.0','330.0','-330.0','715.0','-715.0','-1.0','1.0','-0.5','0.5','160.0','-160.0','680.0','-680.0','770.0','-770.0','320.0','-320.0','1360.0','-1360.0','380.0','-380.0','1430.0','-1430.0','640.0','-640.0','760.0','-760.0'};
+    subsi = {'80.0','-80.0','340.0','-340.0','40.0','-40.0','385.0','-385.0','340.0','-340.0','330.0','-330.0','715.0','-715.0','-1.0','1.0','-0.5','0.5','160.0','-160.0','680.0','-680.0','770.0','-770.0','320.0','-320.0','1360.0','-1360.0','380.0','-380.0','1430.0','-1430.0','640.0','-640.0','760.0','-760.0',...
+             str2sym('cos(q1)'),str2sym('sin(q1)'),str2sym('cos(q2)'),str2sym('sin(q2)'),str2sym('cos(q3)'),str2sym('sin(q3)'),str2sym('cos(q4)'),str2sym('sin(q4)'),str2sym('cos(q5)'),str2sym('sin(q5)'),str2sym('cos(q6)'),str2sym('sin(q6)')};
     % Outputs
-    subso = { 80,    -80,    340,    -340,    40,    -40,    385,    -385,    340,    -340,    330,    -330,    715,    -715,    -1,    1,    -0.5,  0.5,  160,    -160,    680,    -680,    770,    -770,    320.    -320,    1360,    -1360,    380,    -380,    1430,    -1430,    640,    -640,    760,    -760};
+    subso = { 80,    -80,    340,    -340,    40,    -40,    385,    -385,    340,    -340,    330,    -330,    715,    -715,    -1,    1,    -0.5,  0.5,  160,    -160,    680,    -680,    770,    -770,    320.    -320,    1360,    -1360,    380,    -380,    1430,    -1430,    640,    -640,    760,    -760,...
+                      cos(q(1))   ,     sin(q(1)),         cos(q(2)),         sin(q(2)),         cos(q(3)),         sin(q(3))  ,       cos(q(4)),         sin(q(4)),         cos(q(5)),         sin(q(5))  ,       cos(q(6))  ,       sin(q(6))};
     Tbe = simplify(subs(robot.T.be,subsi,subso));Teb = simplify(subs(robot.T.eb,subsi,subso));
     Js = robot.Js;Jb = robot.Jb;
     
@@ -170,7 +166,7 @@ function inintGP7(resj,resc,rest)
     SYMBS = syms;
     save('Initialization.mat','robot','Js','Jb','Tbe','Teb','resc',...
                               'resj','rest','Ab','Av','Aw','GP7','q',...
-                              'qd','qdd','subsi','subso','SYMBS','Xc',...
+                              'subsi','subso','SYMBS','Xc',...
                               'Yc','Zc')
     disp('Done Section 1')
 end

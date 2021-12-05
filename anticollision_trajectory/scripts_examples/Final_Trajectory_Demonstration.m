@@ -49,7 +49,8 @@ end
 % kinematics
 
 hrz = rest; 
-
+disp('paused waiting for 10')
+pause(10)
 [TrjObj,TT] = jnttrjgn(PathObj,rest);
 TT.Properties.VariableUnits = {'rads','rads/sec','rads/(sec^2)'};
 disp('Wrtign CSV')
@@ -61,9 +62,10 @@ stackedplot(TT); grid on;
 % Vizualisation
 r = rateControl(240);
 figure(9)
+pause(1)
 show(GP7,double(jseq(:,1))')
 pause(1)
-for ii = 1:length(TrjObj.tvct)
+for ii = 1:10:length(TrjObj.tvct)
     config = TrjObj.Jnt.jnt(:,ii)';
     show(GP7,config);title(ii)
     waitfor(r);
