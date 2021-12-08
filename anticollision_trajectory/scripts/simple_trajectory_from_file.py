@@ -44,7 +44,7 @@ def main():
 
     # Load Trajectory Plan (list of joints)
     cwd = os.path.dirname(os.path.realpath(__file__))
-    traj_plan_file_name = "trajectory_example.csv"
+    traj_plan_file_name = "trajectory_OSU.csv"
     traj_plan_file_path = os.path.join(cwd,traj_plan_file_name)
 
     traj_array = np.zeros((1,19))
@@ -76,9 +76,7 @@ def main():
         rospy.logdebug("Added Waypoint #%s.  Waypoint: %s", i, rowx)
     
     # Send Plan
-    time.sleep(5)
-    traj_plan.send_trajectory()
-    time.sleep(1)
+    # time.sleep(5)
     traj_plan.send_trajectory()
 
 
