@@ -1,4 +1,4 @@
-function cdAB = cdist(A,B) % Cartesian distance starting from A ending at B
+function cdAB = cdist(A,B) % euclidean distance in n-dimensions starting from A ending at B
 
     As = sym(ones(size(A)));    Bs = sym(ones(size(B)));
     As(:) = A(:);    Bs(:) = B(:);

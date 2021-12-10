@@ -16,6 +16,7 @@ function inintGP7(resj,resc,rest)
     % Robot URDF Import
     GP7 = importrobot('motoman_gp7_support/urdf/gp7.urdf');
     GP7.DataFormat = 'row';
+    GP7.Gravity = sym([0,0,-9.81]);
     
     % Forward Kinematics of Desired Robot - Define diferent characteristics
     % of the robot in Product Of Exponential convention w.r.t the baseframe
@@ -38,7 +39,7 @@ function inintGP7(resj,resc,rest)
     
     % Joint 1 - Swivel Base
     SwivelBase.s = zb;                                                      % Screw Axis direction in C axis
-    SwivelBase.h = 0;                                                       % Pitch of joint
+    SwivelBase.h = sym('0');                                                       % Pitch of joint
     SwivelBase.m = sym('m1','real');                                        % Total mass of the link
     SwivelBase.I = sym('I1',[3,1],'real');                                  % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
     SwivelBase.qb = sym([ 0, 0, sym('330.0')]');                            % Location the joint wrt. the base frame
@@ -53,7 +54,7 @@ function inintGP7(resj,resc,rest)
     
     % Joint 2 - Lower Arm
     LowerArm.s = yb;                                                        % Screw Axis direction in C axis
-    LowerArm.h = 0;                                                         % Pitch of joint
+    LowerArm.h = sym('0');                                                         % Pitch of joint
     LowerArm.m = sym('m2','real');                                          % Total mass of the link
     LowerArm.I = sym('I2',[3,1],'real');                                    % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
     LowerArm.qb = ([ sym('40.0'), 0, sym('330.0')]');                       % Location the joint wrt. the base frame
@@ -68,7 +69,7 @@ function inintGP7(resj,resc,rest)
     
     % Joint 3 - Upper Arm
     UpperArm.s = -yb;                                                       % Screw Axis direction in base frame
-    UpperArm.h = 0;                                                         % Pitch of joint
+    UpperArm.h = sym('0');                                                         % Pitch of joint
     UpperArm.m = sym('m3','real');                                          % Total mass of the link
     UpperArm.I = sym('I3',[3,1],'real');                                    % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
     UpperArm.qb = ([ sym('40.0'), 0, sym('715.0')]');                       % Location the joint wrt. the base frame
@@ -83,7 +84,7 @@ function inintGP7(resj,resc,rest)
     
     % Joint 4 - Arm Roll
     ArmRoll.s = -xb;                                                        % Screw Axis direction in base frame
-    ArmRoll.h = 0;                                                          % Pitch of joint
+    ArmRoll.h = sym('0');                                                          % Pitch of joint
     ArmRoll.m = sym('m4','real');                                           % Total mass of the link
     ArmRoll.I = sym('I4',[3,1],'real');                                     % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
     ArmRoll.qb = ([ sym('40.0'), 0, sym('715.0')]');                        % Location the joint wrt. the base frame
@@ -98,7 +99,7 @@ function inintGP7(resj,resc,rest)
     
     % Joint 5 - Wrist Bend
     WristBend.s = -yb;                                                      % Screw Axis direction in base frame
-    WristBend.h = 0;                                                        % Pitch of joint
+    WristBend.h = sym('0');                                                        % Pitch of joint
     WristBend.m = sym('m5','real');                                         % Total mass of the link
     WristBend.I = sym('I5',[3,1],'real');                                   % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
     WristBend.qb = ([sym('380.0'), 0, sym('715.0')]');                      % Location the joint wrt. the base frame
@@ -113,7 +114,7 @@ function inintGP7(resj,resc,rest)
     
     % Joint 6 - Tool Flange
     ToolFlange.s = -xb;                                                     % Screw Axis direction in base frame
-    ToolFlange.h = 0;                                                       % Pitch of joint
+    ToolFlange.h = sym('0');                                                       % Pitch of joint
     ToolFlange.m = sym('m6','real');                                        % Total mass of the link
     ToolFlange.I = sym('I6',[3,1],'real');                                  % Inertia matrix in Center of mass [Ixx, Iyy, Izz]
     ToolFlange.qb = ([sym('460.0'), 0, sym('715.0')]');                     % Location the joint wrt. the base frame

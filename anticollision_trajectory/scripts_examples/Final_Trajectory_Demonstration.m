@@ -7,7 +7,9 @@
 % Deine waypoints as [4x4] HTs in cartesian space, define maximum joint
 % velocities and acceleration for each joint or for all joints
 % Initialization
-clear;load('Initialization.mat');
+clear;
+set(0,'DefaultFigureWindowStyle','docked')
+load('Initialization.mat');
 disp('Starting Trajectry Generation')
 path_gen = struct('Segment',[],'Jnt',[],'tvct',[]); 
 sgmnt_gen = struct('Start',[],'End',[],'Vwmax',[],'Awmax',[],'t0',0,...
